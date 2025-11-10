@@ -15,6 +15,7 @@
     "plantuml-encoder": "^1.4.0",
     "lucide-react": "^0.308.0",
     "framer-motion": "^10.16.16",
+    "gsap": "^3.12.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.2.0",

@@ -1,8 +1,9 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import gsap from 'gsap'
 import { ArrowLeft, Code2, Copy, Download, Eye } from 'lucide-react'
 import { encode } from 'plantuml-encoder'
-import { useMemo, useState } from 'react'
+import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useGSAPSlideIn } from '../hooks/useGSAP'
 import Button from './Button'
 import Card from './Card'
 
@@ -14,18 +15,13 @@ export default function DiagramViewer({
   onNewDiagram
 }) {
   const [showCode, setShowCode] = useState(false)
+  const containerRef = useGSAPSlideIn('right')
+  const diagramRef = useRef(null)
 
   // Encode PlantUML code to generate diagram URL
-  const diagramUrl = useMemo(() => {
-    if (!plantUMLCode.trim()) return null
-    try {
-      const encoded = encode(plantUMLCode)
-      return `https://www.plantuml.com/plantuml/png/${encoded}`
-    } catch (err) {
-      console.error('Encoding error:', err)
-      return null
-    }
-  }, [plantUMLCode])
+  const diagramUrl = plantUMLCode.trim()
+    ? `https://www.plantuml.com/plantuml/png/${encode(plantUMLCode)}`
+    : null
 
   // Handle code copy
   const handleCopyCode = () => {
@@ -49,7 +45,6 @@ export default function DiagramViewer({
       document.body.removeChild(a)
       toast.success('PNG downloaded successfully!')
     } catch (err) {
-      console.error('Download error:', err)
       toast.error('Failed to download PNG')
     }
   }
@@ -72,30 +67,28 @@ export default function DiagramViewer({
       document.body.removeChild(a)
       toast.success('SVG downloaded successfully!')
     } catch (err) {
-      console.error('Download error:', err)
       toast.error('Failed to download SVG')
     }
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
+  const handleTabChange = (tab) => {
+    gsap.to(containerRef.current, {
+      opacity: 0.5,
+      duration: 0.2,
+      onComplete: () => {
+        setShowCode(tab === 'code')
+        gsap.to(containerRef.current, {
+          opacity: 1,
+          duration: 0.2
+        })
       }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+    })
   }
 
   return (
     <Card isDarkMode={isDarkMode} className="shadow-2xl h-full flex flex-col overflow-hidden p-0">
       {/* Header */}
-      <motion.div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4`} variants={itemVariants}>
+      <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             {onNewDiagram && (
@@ -111,7 +104,7 @@ export default function DiagramViewer({
             <h2 className="text-xl font-bold">Diagram Viewer</h2>
           </div>
           {diagramUrl && (
-            <motion.div className="flex gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="flex gap-2">
               <Button
                 onClick={handleDownloadPNG}
                 variant="success"
@@ -128,118 +121,78 @@ export default function DiagramViewer({
                 <Download size={16} />
                 <span className="hidden sm:inline">SVG</span>
               </Button>
-            </motion.div>
+            </div>
           )}
         </div>
 
         {/* Tab Buttons */}
-        <motion.div className={`flex gap-2 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} variants={itemVariants}>
-          <motion.button
-            onClick={() => setShowCode(false)}
-            className={`px-4 py-2 font-semibold flex items-center gap-2 border-b-2 transition ${
+        <div className={`flex gap-2 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <button
+            onClick={() => handleTabChange('preview')}
+            className={`px-4 py-2 font-semibold flex items-center gap-2 border-b-2 transition-all ${
               !showCode
                 ? 'border-blue-500 text-blue-500'
                 : isDarkMode
                 ? 'border-transparent text-gray-400 hover:text-gray-300'
                 : 'border-transparent text-gray-500 hover:text-gray-600'
             }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
             <Eye size={18} />
             <span className="hidden sm:inline">Preview</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setShowCode(true)}
-            className={`px-4 py-2 font-semibold flex items-center gap-2 border-b-2 transition ${
+          </button>
+          <button
+            onClick={() => handleTabChange('code')}
+            className={`px-4 py-2 font-semibold flex items-center gap-2 border-b-2 transition-all ${
               showCode
                 ? 'border-purple-500 text-purple-500'
                 : isDarkMode
                 ? 'border-transparent text-gray-400 hover:text-gray-300'
                 : 'border-transparent text-gray-500 hover:text-gray-600'
             }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
             <Code2 size={18} />
             <span className="hidden sm:inline">Code</span>
-          </motion.button>
-        </motion.div>
-      </motion.div>
+          </button>
+        </div>
+      </div>
 
       {/* Content Area */}
-      <AnimatePresence mode="wait">
-        {/* Preview Tab */}
-        {!showCode && (
-          <motion.div
-            key="preview"
-            className="flex-1 flex flex-col p-4 overflow-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
+      <div className="flex-1 flex flex-col p-4 overflow-auto">
+        {!showCode ? (
+          <>
             {isLoading ? (
-              <motion.div className="flex-1 flex items-center justify-center">
-                <motion.div className="text-center">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                    className="text-6xl mb-4"
-                  >
-                    ⚡
-                  </motion.div>
-                  <motion.p
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
-                  >
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-6xl mb-4 spin-smooth">⚡</div>
+                  <p className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     Drawing your diagram...
-                  </motion.p>
-                </motion.div>
-              </motion.div>
+                  </p>
+                </div>
+              </div>
             ) : diagramUrl ? (
-              <motion.div
-                className={`flex-1 rounded-xl border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'} p-4 flex items-center justify-center overflow-auto`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
+              <div
+                ref={diagramRef}
+                className={`flex-1 rounded-xl border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'} p-4 flex items-center justify-center overflow-auto diagram-fade`}
               >
-                <motion.img
+                <img
                   src={diagramUrl}
                   alt="Generated UML Diagram"
-                  className="max-w-full max-h-full rounded-lg shadow-lg"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  whileHover={{ scale: 1.02 }}
+                  className="max-w-full max-h-full rounded-lg shadow-lg transition-transform hover:scale-105"
                 />
-              </motion.div>
+              </div>
             ) : (
-              <motion.div className="flex-1 flex items-center justify-center">
-                <motion.div className="text-center">
-                  <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl mb-4">
-                    🎨
-                  </motion.div>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">🎨</div>
                   <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
                     Generate a diagram to see the preview
                   </p>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             )}
-          </motion.div>
-        )}
-
-        {/* Code Tab */}
-        {showCode && (
-          <motion.div
-            key="code"
-            className="flex-1 flex flex-col gap-3 p-4 overflow-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
+          </>
+        ) : (
+          <div className="space-y-3 flex-1">
             <Button
               onClick={handleCopyCode}
               disabled={!plantUMLCode}
@@ -259,11 +212,11 @@ export default function DiagramViewer({
                 isDarkMode
                   ? 'border-gray-700 bg-gray-900/50 focus:border-purple-500'
                   : 'border-gray-200 bg-white/50 focus:border-purple-500'
-              } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none`}
+              } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all resize-none`}
             />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
     </Card>
   )
 }

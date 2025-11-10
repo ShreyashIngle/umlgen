@@ -1,10 +1,12 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import gsap from 'gsap'
 import { Moon, Sparkles, Sun } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
+import Button from './components/Button'
 import Card from './components/Card'
 import ChatPanel from './components/ChatPanel'
 import DiagramViewer from './components/DiagramViewer'
+import { BubbleBackground } from './components/animate-ui/components/backgrounds/bubble'
 import { generateUMLWithGemini } from './services/geminiService'
 
 export default function App() {
@@ -17,8 +19,9 @@ export default function App() {
   const [plantUMLCode, setPlantUMLCode] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(true)
   const [hasGenerated, setHasGenerated] = useState(false)
+  const containerRef = useRef(null)
 
   // Diagram type options
   const diagramTypes = [
@@ -59,7 +62,13 @@ export default function App() {
       const finalPrompt = useCustomPrompt ? diagramPrompt : diagramType
       const code = await generateUMLWithGemini(apiKey, projectContext, finalPrompt)
       setPlantUMLCode(code)
-      setHasGenerated(true)
+
+      gsap.to(containerRef.current, {
+        duration: 0.5,
+        onComplete: () => {
+          setHasGenerated(true)
+        }
+      })
     } catch (err) {
       setError(err.message || 'Failed to generate UML diagram')
       console.error('Error:', err)
@@ -73,77 +82,48 @@ export default function App() {
     setPlantUMLCode(newCode)
   }
 
-  const panelVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-    exit: { opacity: 0, x: -20, transition: { duration: 0.3 } }
-  }
-
-  const diagramVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' } }
-  }
-
   return (
-    <div className={isDarkMode ? 'dark' : ''}>
-      <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-gray-100' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-900'}`}>
+    <div className="relative w-full h-screen overflow-hidden">
+      {/* Background */}
+      <BubbleBackground interactive={true} className="fixed inset-0 -z-10" />
+
+      <div className="relative z-10 w-full h-screen flex flex-col">
         {/* Toaster for notifications */}
         <Toaster position="top-right" />
 
         {/* Header */}
-        <header className={`border-b ${isDarkMode ? 'border-gray-800 bg-gray-900/80 backdrop-blur-md' : 'border-blue-200/50 bg-white/80 backdrop-blur-md'} shadow-lg sticky top-0 z-50`}>
+        <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md shadow-lg sticky top-0 z-50 transition-colors">
           <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <motion.div
-              className="flex items-center gap-3"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <motion.div
-                className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg spin-smooth">
                 <Sparkles size={24} />
-              </motion.div>
+              </div>
               <div>
-                <h1 className={`text-2xl font-bold bg-gradient-to-r ${isDarkMode ? 'from-blue-400 to-purple-400' : 'from-blue-600 to-purple-600'} bg-clip-text text-transparent`}>
+                <h1 className="text-2xl font-bold gradient-text">
                   UMLGen
                 </h1>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className="text-xs text-gray-400">
                   AI-Powered Diagrams
                 </p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.button
+            <Button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-                isDarkMode
-                  ? 'bg-gray-800 hover:bg-gray-700 text-yellow-400'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              variant="secondary"
+              className="flex items-center gap-2"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               <span className="hidden sm:inline">{isDarkMode ? 'Light' : 'Dark'}</span>
-            </motion.button>
+            </Button>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <AnimatePresence mode="wait">
-            {!hasGenerated ? (
-              <motion.div
-                key="input-view"
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-                variants={panelVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                {/* Left Panel - Chat */}
+        <main ref={containerRef} className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 overflow-auto">
+          {!hasGenerated ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="gsap-slide-in-left">
                 <ChatPanel
                   apiKey={apiKey}
                   setApiKey={setApiKey}
@@ -161,83 +141,56 @@ export default function App() {
                   error={error}
                   isDarkMode={isDarkMode}
                 />
+              </div>
 
-                {/* Right Panel - Illustration */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                >
-                  <Card isDarkMode={isDarkMode} className="p-8 shadow-2xl flex items-center justify-center min-h-96">
-                    <div className="text-center">
-                      <motion.div
-                        animate={{ y: [-10, 10, -10] }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                        className="text-6xl mb-4"
-                      >
-                        🎨
-                      </motion.div>
-                      <h3 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                        Generate Your Diagram
-                      </h3>
-                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                        Fill in the details and click generate to create your UML diagram
-                      </p>
-                    </div>
-                  </Card>
-                </motion.div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="diagram-view"
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-                variants={diagramVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {/* Left Panel - Compact */}
-                <motion.div
-                  className="lg:col-span-1"
-                  layout
-                  transition={{ duration: 0.5 }}
-                >
-                  <ChatPanel
-                    apiKey={apiKey}
-                    setApiKey={setApiKey}
-                    projectContext={projectContext}
-                    setProjectContext={setProjectContext}
-                    diagramPrompt={diagramPrompt}
-                    setDiagramPrompt={setDiagramPrompt}
-                    diagramType={diagramType}
-                    setDiagramType={setDiagramType}
-                    useCustomPrompt={useCustomPrompt}
-                    setUseCustomPrompt={setUseCustomPrompt}
-                    diagramTypes={diagramTypes}
-                    onGenerate={handleGenerateUML}
-                    isLoading={isLoading}
-                    error={error}
-                    isDarkMode={isDarkMode}
-                    isCompact={true}
-                  />
-                </motion.div>
+              <div className="gsap-slide-in-right">
+                <Card isDarkMode={isDarkMode} className="p-8 shadow-2xl flex items-center justify-center min-h-96">
+                  <div className="text-center">
+                    <div className="text-6xl mb-4">🎨</div>
+                    <h3 className="text-2xl font-bold mb-2 text-gray-100">
+                      Generate Your Diagram
+                    </h3>
+                    <p className="text-gray-400">
+                      Fill in the details and click generate to create your UML diagram
+                    </p>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 gsap-fade-in">
+              <div className="lg:col-span-1">
+                <ChatPanel
+                  apiKey={apiKey}
+                  setApiKey={setApiKey}
+                  projectContext={projectContext}
+                  setProjectContext={setProjectContext}
+                  diagramPrompt={diagramPrompt}
+                  setDiagramPrompt={setDiagramPrompt}
+                  diagramType={diagramType}
+                  setDiagramType={setDiagramType}
+                  useCustomPrompt={useCustomPrompt}
+                  setUseCustomPrompt={setUseCustomPrompt}
+                  diagramTypes={diagramTypes}
+                  onGenerate={handleGenerateUML}
+                  isLoading={isLoading}
+                  error={error}
+                  isDarkMode={isDarkMode}
+                  isCompact={true}
+                />
+              </div>
 
-                {/* Right Panel - Expanded Diagram Viewer */}
-                <motion.div
-                  className="lg:col-span-2"
-                  layout
-                  transition={{ duration: 0.5 }}
-                >
-                  <DiagramViewer
-                    plantUMLCode={plantUMLCode}
-                    isLoading={isLoading}
-                    onCodeChange={handleCodeChange}
-                    isDarkMode={isDarkMode}
-                    onNewDiagram={() => setHasGenerated(false)}
-                  />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              <div className="lg:col-span-2">
+                <DiagramViewer
+                  plantUMLCode={plantUMLCode}
+                  isLoading={isLoading}
+                  onCodeChange={handleCodeChange}
+                  isDarkMode={isDarkMode}
+                  onNewDiagram={() => setHasGenerated(false)}
+                />
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
