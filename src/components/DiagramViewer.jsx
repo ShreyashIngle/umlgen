@@ -93,25 +93,30 @@ export default function DiagramViewer({
   }
 
   return (
-    <Card isDarkMode={isDarkMode} className="shadow-2xl h-full flex flex-col overflow-hidden p-0">
+    <Card isDarkMode={isDarkMode} className="shadow-2xl h-full flex flex-col overflow-hidden p-0 bg-gradient-to-br">
       {/* Header */}
-      <motion.div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4`} variants={itemVariants}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+      <motion.div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex-shrink-0`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
             {onNewDiagram && (
               <Button
                 onClick={onNewDiagram}
                 variant="ghost"
                 size="sm"
-                className="p-2"
+                className="p-2 hover:bg-red-500/20"
               >
                 <ArrowLeft size={20} />
               </Button>
             )}
-            <h2 className="text-xl font-bold">Diagram Viewer</h2>
+            <div>
+              <h2 className="text-lg font-bold">Diagram Viewer</h2>
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {showCode ? 'Edit PlantUML code' : 'Preview your diagram'}
+              </p>
+            </div>
           </div>
           {diagramUrl && (
-            <motion.div className="flex gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <motion.div className="flex gap-2">
               <Button
                 onClick={handleDownloadPNG}
                 variant="success"
@@ -132,52 +137,48 @@ export default function DiagramViewer({
           )}
         </div>
 
-        {/* Tab Buttons */}
-        <motion.div className={`flex gap-2 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} variants={itemVariants}>
+        {/* Tab Buttons - Full Width */}
+        <motion.div className={`flex gap-0 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} -mx-4 px-4`}>
           <motion.button
             onClick={() => setShowCode(false)}
-            className={`px-4 py-2 font-semibold flex items-center gap-2 border-b-2 transition ${
+            className={`flex-1 px-4 py-2 font-semibold flex items-center justify-center gap-2 border-b-2 transition ${
               !showCode
                 ? 'border-blue-500 text-blue-500'
                 : isDarkMode
-                ? 'border-transparent text-gray-400 hover:text-gray-300'
-                : 'border-transparent text-gray-500 hover:text-gray-600'
+                ? 'border-transparent text-gray-400'
+                : 'border-transparent text-gray-500'
             }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
           >
             <Eye size={18} />
-            <span className="hidden sm:inline">Preview</span>
+            <span>Preview</span>
           </motion.button>
           <motion.button
             onClick={() => setShowCode(true)}
-            className={`px-4 py-2 font-semibold flex items-center gap-2 border-b-2 transition ${
+            className={`flex-1 px-4 py-2 font-semibold flex items-center justify-center gap-2 border-b-2 transition ${
               showCode
                 ? 'border-purple-500 text-purple-500'
                 : isDarkMode
-                ? 'border-transparent text-gray-400 hover:text-gray-300'
-                : 'border-transparent text-gray-500 hover:text-gray-600'
+                ? 'border-transparent text-gray-400'
+                : 'border-transparent text-gray-500'
             }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
           >
             <Code2 size={18} />
-            <span className="hidden sm:inline">Code</span>
+            <span>Code</span>
           </motion.button>
         </motion.div>
       </motion.div>
 
-      {/* Content Area */}
+      {/* Content - Full Height */}
       <AnimatePresence mode="wait">
-        {/* Preview Tab */}
         {!showCode && (
           <motion.div
             key="preview"
-            className="flex-1 flex flex-col p-4 overflow-auto"
+            className="flex-1 flex flex-col p-6 overflow-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
           >
             {isLoading ? (
               <motion.div className="flex-1 flex items-center justify-center">
@@ -200,14 +201,13 @@ export default function DiagramViewer({
               </motion.div>
             ) : diagramUrl ? (
               <motion.div
-                className={`flex-1 rounded-xl border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'} p-4 flex items-center justify-center overflow-auto`}
+                className={`flex-1 rounded-xl border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'} flex items-center justify-center overflow-auto`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
               >
                 <motion.img
                   src={diagramUrl}
-                  alt="Generated UML Diagram"
+                  alt="UML Diagram"
                   className="max-w-full max-h-full rounded-lg shadow-lg"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -222,7 +222,7 @@ export default function DiagramViewer({
                     🎨
                   </motion.div>
                   <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
-                    Generate a diagram to see the preview
+                    No diagram yet
                   </p>
                 </motion.div>
               </motion.div>
@@ -230,15 +230,13 @@ export default function DiagramViewer({
           </motion.div>
         )}
 
-        {/* Code Tab */}
         {showCode && (
           <motion.div
             key="code"
-            className="flex-1 flex flex-col gap-3 p-4 overflow-auto"
+            className="flex-1 flex flex-col gap-3 p-6 overflow-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
           >
             <Button
               onClick={handleCopyCode}
@@ -254,11 +252,11 @@ export default function DiagramViewer({
             <textarea
               value={plantUMLCode}
               onChange={(e) => onCodeChange(e.target.value)}
-              placeholder="Generated PlantUML code will appear here. Edit it manually to update the diagram."
+              placeholder="PlantUML code appears here..."
               className={`flex-1 px-4 py-3 rounded-lg border-2 font-mono text-sm ${
                 isDarkMode
-                  ? 'border-gray-700 bg-gray-900/50 focus:border-purple-500'
-                  : 'border-gray-200 bg-white/50 focus:border-purple-500'
+                  ? 'border-gray-700 bg-gray-900/50'
+                  : 'border-gray-200 bg-white/50'
               } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none`}
             />
           </motion.div>

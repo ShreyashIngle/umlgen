@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { cn } from '../utils/cn'
 
 export default function LoadingAnimation({ isDarkMode, message = 'Generating diagram...' }) {
   return (
