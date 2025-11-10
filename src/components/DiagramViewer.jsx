@@ -281,7 +281,7 @@ export default function DiagramViewer({
 
       {/* Main Card */}
       <Card isDarkMode={isDarkMode} className="shadow-2xl h-full flex flex-col overflow-hidden">
-        {/* Header */}
+        {/* Header - Fixed */}
         <motion.div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex-shrink-0`}>
           <div className="flex items-center justify-between mb-3 gap-2">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -368,98 +368,102 @@ export default function DiagramViewer({
           </motion.div>
         </motion.div>
 
-        {/* Content - Full Height */}
-        <AnimatePresence mode="wait">
-          {!showCode && (
-            <motion.div
-              key="preview"
-              className="flex-1 flex flex-col p-6 overflow-auto"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {isLoading ? (
-                <motion.div className="flex-1 flex items-center justify-center">
-                  <motion.div className="text-center">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                      className="text-6xl mb-4"
-                    >
-                      ⚡
-                    </motion.div>
-                    <motion.p
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
-                    >
-                      Drawing your diagram...
-                    </motion.p>
-                  </motion.div>
-                </motion.div>
-              ) : diagramUrl ? (
-                <motion.div
-                  className={`flex-1 rounded-xl border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'} flex items-center justify-center overflow-auto`}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <motion.img
-                    src={diagramUrl}
-                    alt="UML Diagram"
-                    className="max-w-full max-h-full rounded-lg shadow-lg"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    whileHover={{ scale: 1.02 }}
-                  />
-                </motion.div>
-              ) : (
-                <motion.div className="flex-1 flex items-center justify-center">
-                  <motion.div className="text-center">
-                    <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl mb-4">
-                      🎨
-                    </motion.div>
-                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
-                      No diagram yet
-                    </p>
-                  </motion.div>
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-
-          {showCode && (
-            <motion.div
-              key="code"
-              className="flex-1 flex flex-col gap-3 p-6 overflow-auto"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <Button
-                onClick={handleCopyCode}
-                disabled={!plantUMLCode}
-                variant={plantUMLCode ? 'primary' : 'secondary'}
-                size="sm"
-                className="w-fit"
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <AnimatePresence mode="wait">
+            {!showCode && (
+              <motion.div
+                key="preview"
+                className="flex-1 flex flex-col p-6 overflow-auto min-h-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
-                <Copy size={16} />
-                Copy Code
-              </Button>
+                {isLoading ? (
+                  <motion.div className="flex-1 flex items-center justify-center">
+                    <motion.div className="text-center">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                        className="text-6xl mb-4"
+                      >
+                        ⚡
+                      </motion.div>
+                      <motion.p
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                        className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
+                      >
+                        Drawing your diagram...
+                      </motion.p>
+                    </motion.div>
+                  </motion.div>
+                ) : diagramUrl ? (
+                  <motion.div
+                    className={`flex-1 rounded-xl border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'} flex items-center justify-center overflow-auto p-4`}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    <motion.img
+                      src={diagramUrl}
+                      alt="UML Diagram"
+                      className="max-w-full h-auto rounded-lg shadow-lg object-contain"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      whileHover={{ scale: 1.02 }}
+                      style={{ maxHeight: '100%' }}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div className="flex-1 flex items-center justify-center">
+                    <motion.div className="text-center">
+                      <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl mb-4">
+                        🎨
+                      </motion.div>
+                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
+                        No diagram yet
+                      </p>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
 
-              <textarea
-                value={plantUMLCode}
-                onChange={(e) => onCodeChange(e.target.value)}
-                placeholder="PlantUML code appears here..."
-                className={`flex-1 px-4 py-3 rounded-lg border-2 font-mono text-sm ${
-                  isDarkMode
-                    ? 'border-gray-700 bg-gray-900/50'
-                    : 'border-gray-200 bg-white/50'
-                } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none`}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {showCode && (
+              <motion.div
+                key="code"
+                className="flex-1 flex flex-col gap-3 p-6 overflow-hidden min-h-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <Button
+                  onClick={handleCopyCode}
+                  disabled={!plantUMLCode}
+                  variant={plantUMLCode ? 'primary' : 'secondary'}
+                  size="sm"
+                  className="w-fit flex-shrink-0"
+                >
+                  <Copy size={16} />
+                  Copy Code
+                </Button>
+
+                <textarea
+                  value={plantUMLCode}
+                  onChange={(e) => onCodeChange(e.target.value)}
+                  placeholder="PlantUML code appears here..."
+                  className={`flex-1 px-4 py-3 rounded-lg border-2 font-mono text-sm ${
+                    isDarkMode
+                      ? 'border-gray-700 bg-gray-900/50 text-gray-100'
+                      : 'border-gray-200 bg-white/50 text-gray-900'
+                  } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none overflow-auto`}
+                  style={{ minHeight: '200px' }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </Card>
     </>
   )

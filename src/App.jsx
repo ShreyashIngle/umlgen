@@ -244,21 +244,21 @@ export default function App() {
         </AnimatePresence>
 
         {/* Main Content */}
-        <main className="flex-1 w-full px-4 sm:px-6 py-4 overflow-hidden">
-          <div className="max-w-7xl mx-auto h-full">
+        <main className="flex-1 w-full px-4 sm:px-6 py-4 overflow-hidden flex flex-col">
+          <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden">
             <AnimatePresence mode="wait">
               {!hasGenerated ? (
                 // Chat Only View
                 <motion.div
                   key="chat-only"
-                  className="h-[calc(100vh-180px)] flex"
+                  className="flex-1 flex overflow-hidden"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <Card isDarkMode={isDarkMode} className="w-full h-full p-0 flex flex-col shadow-2xl">
+                  <Card isDarkMode={isDarkMode} className="w-full h-full p-0 flex flex-col shadow-2xl overflow-hidden">
                     {/* Header */}
-                    <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between`}>
+                    <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between flex-shrink-0`}>
                       <h2 className="text-xl font-bold">Chat</h2>
                       <div className="flex gap-2">
                         <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-2">
@@ -270,8 +270,8 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Messages */}
-                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {/* Messages - Scrollable */}
+                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                       <AnimatePresence>
                         {messages.map((msg) => (
                           <div key={msg.id}>
@@ -319,22 +319,25 @@ export default function App() {
                       <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input */}
-                    <ChatInput
-                      onSend={handleSendMessage}
-                      disabled={isLoading || showDiagramSelector}
-                      isDarkMode={isDarkMode}
-                      placeholder={!projectContext ? 'Describe your project...' : 'Ask for modifications...'}
-                    />
+                    {/* Input - Fixed at bottom */}
+                    <div className="flex-shrink-0">
+                      <ChatInput
+                        onSend={handleSendMessage}
+                        disabled={isLoading || showDiagramSelector}
+                        isDarkMode={isDarkMode}
+                        placeholder={!projectContext ? 'Describe your project...' : 'Ask for modifications...'}
+                      />
+                    </div>
                   </Card>
                 </motion.div>
               ) : (
                 // Split View with Diagram
                 <motion.div
                   key="split-view"
-                  className="h-[calc(100vh-180px)] grid gap-4 relative"
+                  className="flex-1 grid gap-4 relative overflow-hidden"
                   style={{
-                    gridTemplateColumns: isChatCollapsed ? '0px 1fr' : 'minmax(300px, 350px) 1fr'
+                    gridTemplateColumns: isChatCollapsed ? '0px 1fr' : 'minmax(300px, 350px) 1fr',
+                    gridTemplateRows: '1fr'
                   }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -348,7 +351,7 @@ export default function App() {
                         animate={{ x: 0, opacity: 1, width: 'auto' }}
                         exit={{ x: -50, opacity: 0, width: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="relative"
+                        className="relative overflow-hidden"
                       >
                         <Card isDarkMode={isDarkMode} className="h-full flex flex-col shadow-xl overflow-hidden">
                           {/* Chat Header */}
@@ -364,8 +367,8 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* Messages List - Improved Scroll */}
-                          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-rounded">
+                          {/* Messages List - Scrollable */}
+                          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-rounded min-h-0">
                             <AnimatePresence>
                               {messages.slice(-8).map((msg) => (
                                 <motion.div
@@ -385,9 +388,7 @@ export default function App() {
                                 >
                                   <div className="flex items-start gap-2">
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                      msg.isUser 
-                                        ? 'bg-indigo-500' 
-                                        : 'bg-cyan-500'
+                                      msg.isUser ? 'bg-indigo-500' : 'bg-cyan-500'
                                     }`}>
                                       <span className="text-white text-xs">
                                         {msg.isUser ? '👤' : '🤖'}
@@ -400,7 +401,7 @@ export default function App() {
                             </AnimatePresence>
                           </div>
 
-                          {/* Sticky Input at Bottom */}
+                          {/* Input - Fixed at bottom */}
                           <div className="flex-shrink-0">
                             <ChatInput
                               onSend={handleSendMessage}
@@ -415,7 +416,7 @@ export default function App() {
                     )}
                   </AnimatePresence>
 
-                  {/* Collapse/Expand Button - Floating */}
+                  {/* Collapse/Expand Button */}
                   {isChatCollapsed && (
                     <motion.button
                       initial={{ opacity: 0, x: -20 }}
@@ -437,7 +438,7 @@ export default function App() {
                   <motion.div
                     layout
                     transition={{ duration: 0.3 }}
-                    className="relative"
+                    className="relative overflow-hidden"
                   >
                     <DiagramViewer
                       plantUMLCode={plantUMLCode}
