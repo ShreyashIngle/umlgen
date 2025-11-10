@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { History, Moon, Settings, Sparkles, Sun, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, History, Moon, Settings, Sparkles, Sun, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import Button from './components/Button'
@@ -36,6 +36,7 @@ export default function App() {
   const [hasGenerated, setHasGenerated] = useState(false)
   const [selectedDiagramType, setSelectedDiagramType] = useState('')
   const [showDiagramSelector, setShowDiagramSelector] = useState(false)
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false)
 
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)
@@ -242,7 +243,7 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Main Content - Fixed overflow container */}
+        {/* Main Content */}
         <main className="flex-1 w-full px-4 sm:px-6 py-4 overflow-hidden">
           <div className="max-w-7xl mx-auto h-full">
             <AnimatePresence mode="wait">
@@ -331,62 +332,122 @@ export default function App() {
                 // Split View with Diagram
                 <motion.div
                   key="split-view"
-                  className="h-[calc(100vh-180px)] grid grid-cols-1 lg:grid-cols-3 gap-4"
+                  className="h-[calc(100vh-180px)] grid gap-4 relative"
+                  style={{
+                    gridTemplateColumns: isChatCollapsed ? '0px 1fr' : 'minmax(300px, 350px) 1fr'
+                  }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  {/* Left - Chat Panel */}
-                  <motion.div
-                    className="lg:col-span-1"
-                    initial={{ x: -50, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <Card isDarkMode={isDarkMode} className="h-full p-4 flex flex-col shadow-xl">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-sm">Messages</h3>
-                        <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-1">
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                      <div className="flex-1 overflow-y-auto space-y-3 mb-4 text-sm">
-                        <AnimatePresence>
-                          {messages.slice(-5).map((msg) => (
-                            <motion.div
-                              key={msg.id}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className={`p-2 rounded-lg ${msg.isUser ? (isDarkMode ? 'bg-indigo-900/50' : 'bg-indigo-100') : (isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100')}`}
-                            >
-                              {msg.text}
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                      <ChatInput
-                        onSend={handleSendMessage}
-                        disabled={isLoading}
-                        isDarkMode={isDarkMode}
-                        placeholder="Modify the diagram..."
-                        compact
-                      />
-                    </Card>
-                  </motion.div>
+                  {/* Left - Collapsible Chat Panel */}
+                  <AnimatePresence>
+                    {!isChatCollapsed && (
+                      <motion.div
+                        initial={{ x: -50, opacity: 0, width: 0 }}
+                        animate={{ x: 0, opacity: 1, width: 'auto' }}
+                        exit={{ x: -50, opacity: 0, width: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="relative"
+                      >
+                        <Card isDarkMode={isDarkMode} className="h-full flex flex-col shadow-xl overflow-hidden">
+                          {/* Chat Header */}
+                          <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between flex-shrink-0`}>
+                            <h3 className="font-bold text-base">Messages</h3>
+                            <div className="flex gap-2 items-center">
+                              <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-1.5">
+                                <Trash2 size={16} />
+                              </Button>
+                              <Button onClick={() => setIsChatCollapsed(true)} variant="ghost" size="sm" className="p-1.5">
+                                <ChevronLeft size={16} />
+                              </Button>
+                            </div>
+                          </div>
 
-                  {/* Right - Diagram */}
+                          {/* Messages List - Improved Scroll */}
+                          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-rounded">
+                            <AnimatePresence>
+                              {messages.slice(-8).map((msg) => (
+                                <motion.div
+                                  key={msg.id}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -10 }}
+                                  className={`p-3 rounded-lg text-sm shadow-sm ${
+                                    msg.isUser 
+                                      ? isDarkMode 
+                                        ? 'bg-indigo-900/50 border border-indigo-700/50' 
+                                        : 'bg-indigo-100 border border-indigo-200'
+                                      : isDarkMode 
+                                      ? 'bg-gray-800/50 border border-gray-700/50' 
+                                      : 'bg-gray-100 border border-gray-200'
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                      msg.isUser 
+                                        ? 'bg-indigo-500' 
+                                        : 'bg-cyan-500'
+                                    }`}>
+                                      <span className="text-white text-xs">
+                                        {msg.isUser ? '👤' : '🤖'}
+                                      </span>
+                                    </div>
+                                    <p className="leading-relaxed break-words flex-1">{msg.text}</p>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                          </div>
+
+                          {/* Sticky Input at Bottom */}
+                          <div className="flex-shrink-0">
+                            <ChatInput
+                              onSend={handleSendMessage}
+                              disabled={isLoading}
+                              isDarkMode={isDarkMode}
+                              placeholder="Modify the diagram..."
+                              compact
+                            />
+                          </div>
+                        </Card>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Collapse/Expand Button - Floating */}
+                  {isChatCollapsed && (
+                    <motion.button
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      onClick={() => setIsChatCollapsed(false)}
+                      className={`absolute left-4 top-4 z-10 p-3 rounded-xl shadow-lg backdrop-blur-md transition-all ${
+                        isDarkMode 
+                          ? 'bg-gray-800/90 hover:bg-gray-700/90 border border-gray-700' 
+                          : 'bg-white/90 hover:bg-gray-100/90 border border-gray-200'
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <ChevronRight size={20} />
+                    </motion.button>
+                  )}
+
+                  {/* Right - Diagram Viewer */}
                   <motion.div
-                    className="lg:col-span-2"
-                    initial={{ x: 50, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
+                    layout
+                    transition={{ duration: 0.3 }}
+                    className="relative"
                   >
                     <DiagramViewer
                       plantUMLCode={plantUMLCode}
                       isLoading={isLoading}
                       onCodeChange={setPlantUMLCode}
                       isDarkMode={isDarkMode}
-                      onNewDiagram={() => setHasGenerated(false)}
+                      onNewDiagram={() => {
+                        setHasGenerated(false)
+                        setIsChatCollapsed(false)
+                      }}
                     />
                   </motion.div>
                 </motion.div>

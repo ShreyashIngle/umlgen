@@ -11,10 +11,10 @@ export default function ChatInput({ onSend, disabled, isDarkMode, placeholder, c
     const textarea = textareaRef.current
     if (textarea) {
       textarea.style.height = 'auto'
-      const newHeight = Math.min(textarea.scrollHeight, 120)
+      const newHeight = Math.min(textarea.scrollHeight, compact ? 80 : 120)
       textarea.style.height = newHeight + 'px'
     }
-  }, [input])
+  }, [input, compact])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -28,19 +28,17 @@ export default function ChatInput({ onSend, disabled, isDarkMode, placeholder, c
   }
 
   return (
-    <motion.form
+    <form
       onSubmit={handleSubmit}
       className={cn(
-        'border-t backdrop-blur-md',
-        isDarkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-white/80 border-gray-200',
+        'border-t backdrop-blur-md flex-shrink-0',
+        isDarkMode ? 'bg-gray-900/95 border-gray-800' : 'bg-white/95 border-gray-200',
         compact ? 'p-3' : 'p-4'
       )}
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
     >
       <div className="flex gap-2 items-end">
-        <div className="flex-1 relative">
-          <motion.textarea
+        <div className="flex-1 relative min-w-0">
+          <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -54,23 +52,27 @@ export default function ChatInput({ onSend, disabled, isDarkMode, placeholder, c
             disabled={disabled}
             rows={1}
             className={cn(
-              'w-full rounded-2xl border-2 resize-none transition-all duration-300 font-medium scrollbar-thin scrollbar-thumb-gray-600 max-h-40',
+              'w-full rounded-xl border-2 resize-none transition-all duration-200 font-medium overflow-y-auto',
               isDarkMode
-                ? 'bg-gray-800 border-gray-700 focus:border-cyan-500 focus:bg-gray-800'
-                : 'bg-gray-50 border-gray-300 focus:border-indigo-500 focus:bg-white',
-              'focus:outline-none focus:ring-4',
+                ? 'bg-gray-800 border-gray-700 focus:border-cyan-500 text-gray-100 placeholder-gray-500'
+                : 'bg-gray-50 border-gray-300 focus:border-indigo-500 text-gray-900 placeholder-gray-400',
+              'focus:outline-none focus:ring-2',
               isDarkMode ? 'focus:ring-cyan-500/20' : 'focus:ring-indigo-500/20',
               disabled && 'opacity-50 cursor-not-allowed',
-              compact ? 'px-3 py-2 text-sm' : 'px-4 py-3'
+              compact ? 'px-3 py-2 text-sm' : 'px-4 py-2.5 text-base',
+              !compact && 'pr-10'
             )}
-            whileFocus={{ scale: 1.01 }}
+            style={{
+              maxHeight: compact ? '80px' : '120px',
+              minHeight: compact ? '36px' : '44px'
+            }}
           />
           {!compact && (
             <Sparkles
-              size={20}
+              size={18}
               className={cn(
-                'absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none',
-                isDarkMode ? 'text-cyan-500' : 'text-indigo-500'
+                'absolute right-3 top-3 pointer-events-none',
+                isDarkMode ? 'text-cyan-500/50' : 'text-indigo-500/50'
               )}
             />
           )}
@@ -80,20 +82,20 @@ export default function ChatInput({ onSend, disabled, isDarkMode, placeholder, c
           type="submit"
           disabled={disabled || !input.trim()}
           className={cn(
-            'rounded-xl font-semibold transition-all duration-300 shadow-lg flex-shrink-0',
+            'rounded-xl font-semibold transition-all duration-200 shadow-md flex-shrink-0',
             !disabled && input.trim()
-              ? 'bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white'
+              ? 'bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white hover:shadow-lg'
               : isDarkMode
-              ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+              ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed',
-            compact ? 'p-2' : 'p-3'
+            compact ? 'p-2' : 'p-2.5'
           )}
           whileHover={!disabled && input.trim() ? { scale: 1.05 } : {}}
           whileTap={!disabled && input.trim() ? { scale: 0.95 } : {}}
         >
-          <Send size={compact ? 16 : 20} />
+          <Send size={compact ? 16 : 18} />
         </motion.button>
       </div>
-    </motion.form>
+    </form>
   )
 }

@@ -280,29 +280,29 @@ export default function DiagramViewer({
       </AnimatePresence>
 
       {/* Main Card */}
-      <Card isDarkMode={isDarkMode} className="shadow-2xl h-full flex flex-col overflow-hidden p-0">
+      <Card isDarkMode={isDarkMode} className="shadow-2xl h-full flex flex-col overflow-hidden">
         {/* Header */}
         <motion.div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex-shrink-0`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               {onNewDiagram && (
                 <Button
                   onClick={onNewDiagram}
                   variant="ghost"
                   size="sm"
-                  className="p-2 hover:bg-red-500/20"
+                  className="p-2 hover:bg-red-500/20 flex-shrink-0"
                 >
                   <ArrowLeft size={20} />
                 </Button>
               )}
-              <div>
-                <h2 className="text-lg font-bold">Diagram Viewer</h2>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold truncate">Diagram Viewer</h2>
+                <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   {showCode ? 'Edit PlantUML code' : 'Preview your diagram'}
                 </p>
               </div>
             </div>
-            <motion.div className="flex gap-2">
+            <motion.div className="flex gap-2 flex-shrink-0">
               <Button
                 onClick={() => setIsFullscreen(true)}
                 variant="primary"
