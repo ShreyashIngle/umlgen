@@ -242,155 +242,157 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Main Content */}
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4">
-          <AnimatePresence mode="wait">
-            {!hasGenerated ? (
-              // Chat Only View
-              <motion.div
-                key="chat-only"
-                className="h-[calc(100vh-180px)] flex"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <Card isDarkMode={isDarkMode} className="w-full h-full p-0 flex flex-col shadow-2xl">
-                  {/* Header */}
-                  <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between`}>
-                    <h2 className="text-xl font-bold">Chat</h2>
-                    <div className="flex gap-2">
-                      <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-2">
-                        <Trash2 size={18} />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="p-2">
-                        <History size={18} />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-                    <AnimatePresence>
-                      {messages.map((msg) => (
-                        <div key={msg.id}>
-                          {msg.isDiagramSelector ? (
-                            <motion.div
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className={`flex gap-3 mb-4`}
-                            >
-                              <motion.div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-cyan-500 to-blue-600">
-                                <Sparkles size={20} className="text-white" />
-                              </motion.div>
-                              <div className="flex-1">
-                                <motion.p className={`px-4 py-3 rounded-2xl inline-block ${isDarkMode ? 'bg-gray-800/50 border border-gray-700/50' : 'bg-white border border-gray-200'} text-sm mb-4`}>
-                                  {msg.text}
-                                </motion.p>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {msg.options?.map((option) => (
-                                    <motion.button
-                                      key={option}
-                                      onClick={() => handleSelectDiagram(option)}
-                                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isDarkMode ? 'bg-indigo-900/50 hover:bg-indigo-800/80 border border-indigo-700/50' : 'bg-indigo-100 hover:bg-indigo-200 border border-indigo-300'}`}
-                                      whileHover={{ scale: 1.05 }}
-                                      whileTap={{ scale: 0.95 }}
-                                    >
-                                      {option}
-                                    </motion.button>
-                                  ))}
-                                </div>
-                              </div>
-                            </motion.div>
-                          ) : (
-                            <MessageBubble
-                              message={msg.text}
-                              isUser={msg.isUser}
-                              isTyping={msg.isTyping}
-                              isDarkMode={isDarkMode}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </AnimatePresence>
-
-                    {isLoading && <LoadingAnimation isDarkMode={isDarkMode} message="Generating your diagram..." />}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  {/* Input */}
-                  <ChatInput
-                    onSend={handleSendMessage}
-                    disabled={isLoading || showDiagramSelector}
-                    isDarkMode={isDarkMode}
-                    placeholder={!projectContext ? 'Describe your project...' : 'Ask for modifications...'}
-                  />
-                </Card>
-              </motion.div>
-            ) : (
-              // Split View with Diagram
-              <motion.div
-                key="split-view"
-                className="h-[calc(100vh-180px)] grid grid-cols-1 lg:grid-cols-3 gap-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                {/* Left - Chat Panel */}
+        {/* Main Content - Fixed overflow container */}
+        <main className="flex-1 w-full px-4 sm:px-6 py-4 overflow-hidden">
+          <div className="max-w-7xl mx-auto h-full">
+            <AnimatePresence mode="wait">
+              {!hasGenerated ? (
+                // Chat Only View
                 <motion.div
-                  className="lg:col-span-1"
-                  initial={{ x: -50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.1 }}
+                  key="chat-only"
+                  className="h-[calc(100vh-180px)] flex"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
-                  <Card isDarkMode={isDarkMode} className="h-full p-4 flex flex-col shadow-xl">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-sm">Messages</h3>
-                      <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-1">
-                        <Trash2 size={16} />
-                      </Button>
+                  <Card isDarkMode={isDarkMode} className="w-full h-full p-0 flex flex-col shadow-2xl">
+                    {/* Header */}
+                    <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between`}>
+                      <h2 className="text-xl font-bold">Chat</h2>
+                      <div className="flex gap-2">
+                        <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-2">
+                          <Trash2 size={18} />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="p-2">
+                          <History size={18} />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto space-y-3 mb-4 text-sm">
+
+                    {/* Messages */}
+                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
                       <AnimatePresence>
-                        {messages.slice(-5).map((msg) => (
-                          <motion.div
-                            key={msg.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className={`p-2 rounded-lg ${msg.isUser ? (isDarkMode ? 'bg-indigo-900/50' : 'bg-indigo-100') : (isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100')}`}
-                          >
-                            {msg.text}
-                          </motion.div>
+                        {messages.map((msg) => (
+                          <div key={msg.id}>
+                            {msg.isDiagramSelector ? (
+                              <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`flex gap-3 mb-4`}
+                              >
+                                <motion.div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-cyan-500 to-blue-600">
+                                  <Sparkles size={20} className="text-white" />
+                                </motion.div>
+                                <div className="flex-1">
+                                  <motion.p className={`px-4 py-3 rounded-2xl inline-block ${isDarkMode ? 'bg-gray-800/50 border border-gray-700/50' : 'bg-white border border-gray-200'} text-sm mb-4`}>
+                                    {msg.text}
+                                  </motion.p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {msg.options?.map((option) => (
+                                      <motion.button
+                                        key={option}
+                                        onClick={() => handleSelectDiagram(option)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isDarkMode ? 'bg-indigo-900/50 hover:bg-indigo-800/80 border border-indigo-700/50' : 'bg-indigo-100 hover:bg-indigo-200 border border-indigo-300'}`}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                      >
+                                        {option}
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ) : (
+                              <MessageBubble
+                                message={msg.text}
+                                isUser={msg.isUser}
+                                isTyping={msg.isTyping}
+                                isDarkMode={isDarkMode}
+                              />
+                            )}
+                          </div>
                         ))}
                       </AnimatePresence>
+
+                      {isLoading && <LoadingAnimation isDarkMode={isDarkMode} message="Generating your diagram..." />}
+                      <div ref={messagesEndRef} />
                     </div>
+
+                    {/* Input */}
                     <ChatInput
                       onSend={handleSendMessage}
-                      disabled={isLoading}
+                      disabled={isLoading || showDiagramSelector}
                       isDarkMode={isDarkMode}
-                      placeholder="Modify the diagram..."
-                      compact
+                      placeholder={!projectContext ? 'Describe your project...' : 'Ask for modifications...'}
                     />
                   </Card>
                 </motion.div>
-
-                {/* Right - Diagram */}
+              ) : (
+                // Split View with Diagram
                 <motion.div
-                  className="lg:col-span-2"
-                  initial={{ x: 50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
+                  key="split-view"
+                  className="h-[calc(100vh-180px)] grid grid-cols-1 lg:grid-cols-3 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
-                  <DiagramViewer
-                    plantUMLCode={plantUMLCode}
-                    isLoading={isLoading}
-                    onCodeChange={setPlantUMLCode}
-                    isDarkMode={isDarkMode}
-                    onNewDiagram={() => setHasGenerated(false)}
-                  />
+                  {/* Left - Chat Panel */}
+                  <motion.div
+                    className="lg:col-span-1"
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <Card isDarkMode={isDarkMode} className="h-full p-4 flex flex-col shadow-xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-sm">Messages</h3>
+                        <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-1">
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto space-y-3 mb-4 text-sm">
+                        <AnimatePresence>
+                          {messages.slice(-5).map((msg) => (
+                            <motion.div
+                              key={msg.id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className={`p-2 rounded-lg ${msg.isUser ? (isDarkMode ? 'bg-indigo-900/50' : 'bg-indigo-100') : (isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100')}`}
+                            >
+                              {msg.text}
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                      <ChatInput
+                        onSend={handleSendMessage}
+                        disabled={isLoading}
+                        isDarkMode={isDarkMode}
+                        placeholder="Modify the diagram..."
+                        compact
+                      />
+                    </Card>
+                  </motion.div>
+
+                  {/* Right - Diagram */}
+                  <motion.div
+                    className="lg:col-span-2"
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <DiagramViewer
+                      plantUMLCode={plantUMLCode}
+                      isLoading={isLoading}
+                      onCodeChange={setPlantUMLCode}
+                      isDarkMode={isDarkMode}
+                      onNewDiagram={() => setHasGenerated(false)}
+                    />
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          </div>
         </main>
       </div>
     </div>
