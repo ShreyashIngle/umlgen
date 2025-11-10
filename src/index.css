@@ -304,3 +304,28 @@ button, input, select, textarea {
   );
   background-size: 1000px 100%;
 }
+
+/* Split pane styling */
+.Resizer {
+  background: rgba(99, 102, 241, 0.2);
+  opacity: 0.5;
+  z-index: 1;
+  box-sizing: border-box;
+  background-clip: padding-box;
+}
+
+.Resizer:hover {
+  transition: all 0.3s ease;
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.5);
+}
+
+.Resizer.vertical {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.Resizer.vertical:hover {
+  border-left: 2px solid rgba(99, 102, 241, 0.8);
+  border-right: 2px solid rgba(99, 102, 241, 0.8);
+}

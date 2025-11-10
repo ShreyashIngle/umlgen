@@ -1,244 +1,293 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Moon, Sparkles, Sun } from 'lucide-react'
-import { useState } from 'react'
-import { Toaster } from 'react-hot-toast'
-import Card from './components/Card'
-import ChatPanel from './components/ChatPanel'
+import { History, Moon, Settings, Sparkles, Sun, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Toaster, toast } from 'react-hot-toast'
+import SplitPane from 'react-split-pane'
+import Button from './components/Button'
+import ChatInput from './components/ChatInput'
 import DiagramViewer from './components/DiagramViewer'
+import LoadingAnimation from './components/LoadingAnimation'
+import MessageBubble from './components/MessageBubble'
+import ProgressStepper from './components/ProgressStepper'
 import { generateUMLWithGemini } from './services/geminiService'
 
 export default function App() {
   // State management
   const [apiKey, setApiKey] = useState('')
-  const [projectContext, setProjectContext] = useState('')
-  const [diagramPrompt, setDiagramPrompt] = useState('')
-  const [diagramType, setDiagramType] = useState('')
-  const [useCustomPrompt, setUseCustomPrompt] = useState(false)
+  const [messages, setMessages] = useState([
+    { id: 1, text: 'Hi! I\'m your UML assistant. Tell me about your project and what diagram you need.', isUser: false }
+  ])
   const [plantUMLCode, setPlantUMLCode] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [hasGenerated, setHasGenerated] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(true)
+  const [currentStep, setCurrentStep] = useState(0)
+  const [projectContext, setProjectContext] = useState('')
+  const [diagramType, setDiagramType] = useState('')
+  const [showSettings, setShowSettings] = useState(false)
 
-  // Diagram type options
-  const diagramTypes = [
-    'Use Case Diagram',
-    'Class Diagram',
-    'Sequence Diagram',
-    'Activity Diagram',
-    'Component Diagram',
-    'Deployment Diagram',
-    'State Diagram',
-    'ER Diagram'
-  ]
+  const messagesEndRef = useRef(null)
+  const chatContainerRef = useRef(null)
 
-  // Handle UML generation
-  const handleGenerateUML = async () => {
-    if (!apiKey.trim()) {
-      setError('Please enter your Gemini API key')
-      return
-    }
-    if (!projectContext.trim()) {
-      setError('Please enter your project context')
-      return
-    }
-    if (!useCustomPrompt && !diagramType) {
-      setError('Please select a diagram type or enable custom prompt')
-      return
-    }
-    if (useCustomPrompt && !diagramPrompt.trim()) {
-      setError('Please enter your custom prompt')
+  // Auto-scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  // Handle user message
+  const handleSendMessage = async (text) => {
+    if (!apiKey) {
+      toast.error('Please set your API key in settings')
+      setShowSettings(true)
       return
     }
 
+    // Add user message
+    const userMessage = { id: Date.now(), text, isUser: true }
+    setMessages(prev => [...prev, userMessage])
+    setCurrentStep(1)
+
+    // Analyze and extract context
+    if (!projectContext) {
+      setProjectContext(text)
+      setCurrentStep(2)
+      
+      // AI asks for diagram type
+      setTimeout(() => {
+        const aiMessage = {
+          id: Date.now() + 1,
+          text: 'Great! What type of UML diagram would you like?\n\n• Use Case Diagram\n• Class Diagram\n• Sequence Diagram\n• Activity Diagram\n• Component Diagram\n• Deployment Diagram\n• State Diagram\n• ER Diagram\n\nOr describe a custom diagram.',
+          isUser: false,
+          isTyping: true
+        }
+        setMessages(prev => [...prev, aiMessage])
+      }, 500)
+      return
+    }
+
+    // Extract diagram type and generate
+    setDiagramType(text)
+    setCurrentStep(3)
     setIsLoading(true)
-    setError('')
-    setPlantUMLCode('')
 
     try {
-      const finalPrompt = useCustomPrompt ? diagramPrompt : diagramType
-      const code = await generateUMLWithGemini(apiKey, projectContext, finalPrompt)
+      const aiThinking = {
+        id: Date.now() + 2,
+        text: 'Analyzing your requirements and generating the diagram...',
+        isUser: false,
+        isTyping: true
+      }
+      setMessages(prev => [...prev, aiThinking])
+
+      const code = await generateUMLWithGemini(apiKey, projectContext, text)
       setPlantUMLCode(code)
-      setHasGenerated(true)
-    } catch (err) {
-      setError(err.message || 'Failed to generate UML diagram')
-      console.error('Error:', err)
+      setCurrentStep(4)
+
+      // Success message
+      setTimeout(() => {
+        const successMsg = {
+          id: Date.now() + 3,
+          text: '✅ Diagram generated successfully! You can view it on the right panel, edit the code, or download it.',
+          isUser: false,
+          isTyping: true
+        }
+        setMessages(prev => [...prev, successMsg])
+      }, 500)
+
+      toast.success('Diagram generated successfully!')
+    } catch (error) {
+      toast.error(error.message || 'Failed to generate diagram')
+      const errorMsg = {
+        id: Date.now() + 4,
+        text: `❌ Error: ${error.message}. Please try again or check your API key.`,
+        isUser: false
+      }
+      setMessages(prev => [...prev, errorMsg])
+      setCurrentStep(0)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handle manual code edit
-  const handleCodeChange = (newCode) => {
-    setPlantUMLCode(newCode)
-  }
-
-  const panelVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-    exit: { opacity: 0, x: -20, transition: { duration: 0.3 } }
-  }
-
-  const diagramVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' } }
+  // Clear chat
+  const handleClearChat = () => {
+    setMessages([
+      { id: 1, text: 'Hi! I\'m your UML assistant. Tell me about your project and what diagram you need.', isUser: false }
+    ])
+    setProjectContext('')
+    setDiagramType('')
+    setPlantUMLCode('')
+    setCurrentStep(0)
+    toast.success('Chat cleared')
   }
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-gray-100' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-900'}`}>
-        {/* Toaster for notifications */}
+      <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-gray-900 text-gray-100' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900'}`}>
         <Toaster position="top-right" />
 
-        {/* Header */}
-        <header className={`border-b ${isDarkMode ? 'border-gray-800 bg-gray-900/80 backdrop-blur-md' : 'border-blue-200/50 bg-white/80 backdrop-blur-md'} shadow-lg sticky top-0 z-50`}>
-          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        {/* Cinematic Header */}
+        <motion.header
+          className={`border-b backdrop-blur-xl sticky top-0 z-50 ${
+            isDarkMode ? 'bg-gray-900/80 border-gray-800 shadow-2xl' : 'bg-white/80 border-gray-200 shadow-xl'
+          }`}
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          <div className="max-w-full px-6 py-4 flex justify-between items-center">
             <motion.div
-              className="flex items-center gap-3"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-4"
+              whileHover={{ scale: 1.02 }}
             >
               <motion.div
-                className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                className="w-12 h-12 bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 rounded-2xl flex items-center justify-center text-white font-bold shadow-2xl"
+                animate={{ rotate: [0, 5, 0, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <Sparkles size={24} />
+                <Sparkles size={28} />
               </motion.div>
               <div>
-                <h1 className={`text-2xl font-bold bg-gradient-to-r ${isDarkMode ? 'from-blue-400 to-purple-400' : 'from-blue-600 to-purple-600'} bg-clip-text text-transparent`}>
-                  UMLGen
+                <h1 className={`text-2xl font-bold bg-gradient-to-r ${isDarkMode ? 'from-cyan-400 via-indigo-400 to-purple-400' : 'from-indigo-600 via-purple-600 to-cyan-600'} bg-clip-text text-transparent`}>
+                  UMLGen AI
                 </h1>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  AI-Powered Diagrams
+                  Intelligent Diagram Generation
                 </p>
               </div>
             </motion.div>
 
-            <motion.button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-                isDarkMode
-                  ? 'bg-gray-800 hover:bg-gray-700 text-yellow-400'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              <span className="hidden sm:inline">{isDarkMode ? 'Light' : 'Dark'}</span>
-            </motion.button>
+            {/* Progress Stepper */}
+            <div className="hidden lg:block flex-1 max-w-2xl mx-8">
+              <ProgressStepper currentStep={currentStep} isDarkMode={isDarkMode} />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => setShowSettings(!showSettings)}
+                variant="ghost"
+                size="sm"
+                className="p-2"
+              >
+                <Settings size={20} />
+              </Button>
+
+              <Button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                variant="ghost"
+                size="sm"
+                className="p-2"
+              >
+                {isDarkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-indigo-600" />}
+              </Button>
+            </div>
           </div>
-        </header>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <AnimatePresence mode="wait">
-            {!hasGenerated ? (
+          {/* Settings Panel */}
+          <AnimatePresence>
+            {showSettings && (
               <motion.div
-                key="input-view"
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-                variants={panelVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className={`border-t overflow-hidden ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'}`}
               >
-                {/* Left Panel - Chat */}
-                <ChatPanel
-                  apiKey={apiKey}
-                  setApiKey={setApiKey}
-                  projectContext={projectContext}
-                  setProjectContext={setProjectContext}
-                  diagramPrompt={diagramPrompt}
-                  setDiagramPrompt={setDiagramPrompt}
-                  diagramType={diagramType}
-                  setDiagramType={setDiagramType}
-                  useCustomPrompt={useCustomPrompt}
-                  setUseCustomPrompt={setUseCustomPrompt}
-                  diagramTypes={diagramTypes}
-                  onGenerate={handleGenerateUML}
-                  isLoading={isLoading}
-                  error={error}
-                  isDarkMode={isDarkMode}
-                />
-
-                {/* Right Panel - Illustration */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                >
-                  <Card isDarkMode={isDarkMode} className="p-8 shadow-2xl flex items-center justify-center min-h-96">
-                    <div className="text-center">
-                      <motion.div
-                        animate={{ y: [-10, 10, -10] }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                        className="text-6xl mb-4"
-                      >
-                        🎨
-                      </motion.div>
-                      <h3 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                        Generate Your Diagram
-                      </h3>
-                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                        Fill in the details and click generate to create your UML diagram
-                      </p>
-                    </div>
-                  </Card>
-                </motion.div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="diagram-view"
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-                variants={diagramVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {/* Left Panel - Compact */}
-                <motion.div
-                  className="lg:col-span-1"
-                  layout
-                  transition={{ duration: 0.5 }}
-                >
-                  <ChatPanel
-                    apiKey={apiKey}
-                    setApiKey={setApiKey}
-                    projectContext={projectContext}
-                    setProjectContext={setProjectContext}
-                    diagramPrompt={diagramPrompt}
-                    setDiagramPrompt={setDiagramPrompt}
-                    diagramType={diagramType}
-                    setDiagramType={setDiagramType}
-                    useCustomPrompt={useCustomPrompt}
-                    setUseCustomPrompt={setUseCustomPrompt}
-                    diagramTypes={diagramTypes}
-                    onGenerate={handleGenerateUML}
-                    isLoading={isLoading}
-                    error={error}
-                    isDarkMode={isDarkMode}
-                    isCompact={true}
+                <div className="p-4 max-w-2xl mx-auto">
+                  <label className="block text-sm font-semibold mb-2">Gemini API Key</label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your API key..."
+                    className={`w-full px-4 py-2 rounded-lg border-2 ${
+                      isDarkMode ? 'bg-gray-800 border-gray-700 focus:border-cyan-500' : 'bg-white border-gray-300 focus:border-indigo-500'
+                    } focus:outline-none transition-all`}
                   />
-                </motion.div>
-
-                {/* Right Panel - Expanded Diagram Viewer */}
-                <motion.div
-                  className="lg:col-span-2"
-                  layout
-                  transition={{ duration: 0.5 }}
-                >
-                  <DiagramViewer
-                    plantUMLCode={plantUMLCode}
-                    isLoading={isLoading}
-                    onCodeChange={handleCodeChange}
-                    isDarkMode={isDarkMode}
-                    onNewDiagram={() => setHasGenerated(false)}
-                  />
-                </motion.div>
+                  <p className="text-xs mt-2 text-gray-500">
+                    Get your key from{' '}
+                    <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className={`${isDarkMode ? 'text-cyan-400' : 'text-indigo-600'} hover:underline font-semibold`}>
+                      Google AI Studio
+                    </a>
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </main>
+        </motion.header>
+
+        {/* Main Split View */}
+        <SplitPane split="vertical" minSize={400} defaultSize="50%" className="h-[calc(100vh-80px)]">
+          {/* Left Panel - Chat */}
+          <motion.div
+            className={`h-full flex flex-col ${isDarkMode ? 'bg-gray-900/30' : 'bg-white/30'} backdrop-blur-sm`}
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Chat Header */}
+            <div className={`p-4 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} flex items-center justify-between`}>
+              <h2 className="text-lg font-bold">Chat</h2>
+              <div className="flex gap-2">
+                <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-2">
+                  <Trash2 size={18} />
+                </Button>
+                <Button variant="ghost" size="sm" className="p-2">
+                  <History size={18} />
+                </Button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+              <AnimatePresence>
+                {messages.map((msg) => (
+                  <MessageBubble
+                    key={msg.id}
+                    message={msg.text}
+                    isUser={msg.isUser}
+                    isTyping={msg.isTyping}
+                    isDarkMode={isDarkMode}
+                  />
+                ))}
+              </AnimatePresence>
+
+              {isLoading && <LoadingAnimation isDarkMode={isDarkMode} />}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Chat Input */}
+            <ChatInput
+              onSend={handleSendMessage}
+              disabled={isLoading}
+              isDarkMode={isDarkMode}
+              placeholder={
+                !projectContext
+                  ? 'Describe your project...'
+                  : !diagramType
+                  ? 'What type of diagram?'
+                  : 'Ask for modifications...'
+              }
+            />
+          </motion.div>
+
+          {/* Right Panel - Diagram */}
+          <motion.div
+            className="h-full"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <DiagramViewer
+              plantUMLCode={plantUMLCode}
+              isLoading={isLoading}
+              onCodeChange={setPlantUMLCode}
+              isDarkMode={isDarkMode}
+            />
+          </motion.div>
+        </SplitPane>
       </div>
     </div>
   )
