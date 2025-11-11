@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, History, Moon, Settings, Sparkles, Sun, Trash2 } from 'lucide-react'
+import { History, Moon, Settings, Sparkles, Sun, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import Button from './components/Button'
@@ -145,12 +145,13 @@ export default function App() {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className={`min-h-screen w-full flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-gray-900 text-gray-100' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900'}`}>
+      {/* Wrapper with min-height instead of fixed height */}
+      <div className={`min-h-screen w-full ${isDarkMode ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-gray-900 text-gray-100' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900'}`}>
         <Toaster position="top-right" />
 
-        {/* Header - Fixed */}
+        {/* Header - Sticky */}
         <motion.header
-          className={`border-b backdrop-blur-xl sticky top-0 z-50 ${isDarkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-white/80 border-gray-200'} shadow-lg flex-shrink-0`}
+          className={`border-b backdrop-blur-xl sticky top-0 z-50 ${isDarkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-white/80 border-gray-200'} shadow-lg`}
           initial={{ y: -100 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5 }}
@@ -347,20 +348,20 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Main Content - Always scrollable */}
-        <main className="flex-1 w-full px-4 sm:px-6 py-4 min-h-0 flex flex-col">
-          <div className="max-w-7xl mx-auto w-full flex-1 min-h-0 flex flex-col">
+        {/* Main Content - Scrollable with proper constraints */}
+        <main className="w-full px-4 sm:px-6 py-6">
+          <div className="max-w-7xl mx-auto w-full">
             <AnimatePresence mode="wait">
               {!hasGenerated ? (
-                // Chat Only View
+                // Chat Only View - Constrained height with internal scroll
                 <motion.div
                   key="chat-only"
-                  className="flex-1 flex min-h-0"
+                  className="w-full"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <Card isDarkMode={isDarkMode} className="w-full flex-1 p-0 flex flex-col shadow-2xl min-h-0">
+                  <Card isDarkMode={isDarkMode} className="w-full flex flex-col shadow-2xl" style={{ height: 'calc(100vh - 180px)', maxHeight: '800px' }}>
                     {/* Header */}
                     <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between flex-shrink-0`}>
                       <h2 className="text-xl font-bold">Chat</h2>
@@ -374,12 +375,12 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Messages - Always scrollable */}
+                    {/* Messages - Scrollable container */}
                     <div 
                       ref={chatContainerRef} 
-                      className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-rounded"
+                      className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 min-h-0"
                       style={{ 
-                        overflowY: 'scroll',
+                        overflowY: 'auto',
                         WebkitOverflowScrolling: 'touch'
                       }}
                     >
@@ -431,7 +432,7 @@ export default function App() {
                     </div>
 
                     {/* Input - Fixed at bottom */}
-                    <div className="flex-shrink-0 sticky bottom-0">
+                    <div className="flex-shrink-0">
                       <ChatInput
                         onSend={handleSendMessage}
                         disabled={isLoading || showDiagramSelector}
@@ -442,15 +443,16 @@ export default function App() {
                   </Card>
                 </motion.div>
               ) : (
-                // Full Screen Diagram View (No Split) - Step 4
+                // Full Screen Diagram View - Allow page scrolling
                 <motion.div
                   key="diagram-view"
-                  className="flex-1 min-h-0 flex relative"
+                  className="w-full"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  style={{ minHeight: 'calc(100vh - 180px)' }}
                 >
-                  {/* Full Width Diagram Viewer */}
+                  {/* Full Width Diagram Viewer - Will expand to content size */}
                   <DiagramViewer
                     plantUMLCode={plantUMLCode}
                     isLoading={isLoading}
@@ -463,7 +465,7 @@ export default function App() {
                     fullScreen
                   />
 
-                  {/* Floating Edit Button - Bottom Right */}
+                  {/* Floating Edit Button - Bottom Right (Fixed position) */}
                   <motion.button
                     onClick={() => setShowEditDialog(true)}
                     className={`fixed bottom-8 right-8 p-4 rounded-full shadow-2xl backdrop-blur-md z-40 ${

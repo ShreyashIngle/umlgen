@@ -27,7 +27,7 @@ export default function Button({
     <motion.button
       disabled={disabled || loading}
       className={cn(
-        'font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 flex-shrink-0',
+        'font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 flex-shrink-0 whitespace-nowrap',
         variants[variant],
         sizes[size],
         disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
@@ -36,6 +36,7 @@ export default function Button({
       whileHover={!disabled && !loading ? { scale: 1.02 } : {}}
       whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
       transition={{ duration: 0.15 }}
+      style={{ transformOrigin: 'center' }}
       {...props}
     >
       {loading && (

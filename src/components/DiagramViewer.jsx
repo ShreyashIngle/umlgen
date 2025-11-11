@@ -283,8 +283,8 @@ export default function DiagramViewer({
 
       {/* Main Card */}
       <Card isDarkMode={isDarkMode} className={cn(
-        "shadow-2xl w-full h-full flex flex-col min-h-0",
-        fullScreen && "rounded-none border-0"
+        "shadow-2xl w-full flex flex-col",
+        fullScreen && "rounded-2xl"
       )}>
         {/* Header - Fixed */}
         <motion.div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex-shrink-0`}>
@@ -321,7 +321,7 @@ export default function DiagramViewer({
                   <span className="hidden sm:inline">Expand</span>
                 </Button>
               )}
-              {diagramUrl && (
+              {diagramUrl && !showCode && (
                 <>
                   <Button
                     onClick={handleDownloadPNG}
@@ -341,6 +341,26 @@ export default function DiagramViewer({
                   </Button>
                 </>
               )}
+              {showCode && plantUMLCode && (
+                <Button
+                  onClick={handleCopyCode}
+                  variant="primary"
+                  size="sm"
+                >
+                  <Copy size={16} />
+                  <span className="hidden sm:inline">Copy</span>
+                </Button>
+              )}
+              {/* Add expand button for both code and preview modes */}
+              <Button
+                onClick={() => setIsFullscreen(true)}
+                variant="ghost"
+                size="sm"
+                className="p-2"
+                title={`Expand ${showCode ? 'code editor' : 'preview'} to fullscreen`}
+              >
+                <Maximize2 size={16} />
+              </Button>
             </motion.div>
           </div>
 
@@ -374,25 +394,38 @@ export default function DiagramViewer({
               <Code2 size={18} />
               <span>Code</span>
             </motion.button>
+            {/* Add expand button in tab bar */}
+            <motion.button
+              onClick={() => setIsFullscreen(true)}
+              className={`px-4 py-2 font-semibold flex items-center justify-center gap-2 border-b-2 border-transparent transition ${
+                isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              title="Expand to fullscreen"
+            >
+              <Maximize2 size={18} />
+              <span className="hidden md:inline">Expand</span>
+            </motion.button>
           </motion.div>
         </motion.div>
 
-        {/* Content - Force scrolling */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Content - Scrollable with minimum height */}
+        <div className="w-full" style={{ minHeight: fullScreen ? '600px' : '500px' }}>
           <AnimatePresence mode="wait">
             {!showCode && (
               <motion.div
                 key="preview"
                 className={cn(
-                  "h-full w-full",
+                  "w-full",
                   fullScreen ? "p-8" : "p-6"
                 )}
+                style={{ minHeight: fullScreen ? '600px' : '500px' }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
                 {isLoading ? (
-                  <motion.div className="h-full flex items-center justify-center">
+                  <motion.div className="h-full flex items-center justify-center" style={{ minHeight: '400px' }}>
                     <motion.div className="text-center">
                       <motion.div
                         animate={{ rotate: 360 }}
@@ -413,12 +446,13 @@ export default function DiagramViewer({
                 ) : diagramUrl ? (
                   <div
                     className={cn(
-                      "h-full rounded-xl border-2 p-4",
+                      "w-full rounded-xl border-2 p-4",
                       isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'
                     )}
                     style={{ 
                       overflow: 'auto',
-                      WebkitOverflowScrolling: 'touch'
+                      WebkitOverflowScrolling: 'touch',
+                      minHeight: '400px'
                     }}
                   >
                     <motion.img
@@ -432,12 +466,13 @@ export default function DiagramViewer({
                         maxWidth: 'none',
                         width: 'auto',
                         height: 'auto',
-                        display: 'block'
+                        display: 'block',
+                        margin: '0 auto'
                       }}
                     />
                   </div>
                 ) : (
-                  <motion.div className="h-full flex items-center justify-center">
+                  <motion.div className="flex items-center justify-center" style={{ minHeight: '400px' }}>
                     <motion.div className="text-center">
                       <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl mb-4">
                         🎨
@@ -454,7 +489,8 @@ export default function DiagramViewer({
             {showCode && (
               <motion.div
                 key="code"
-                className="h-full flex flex-col gap-3 p-6"
+                className="flex flex-col gap-3 p-6"
+                style={{ minHeight: fullScreen ? '600px' : '500px' }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -470,7 +506,7 @@ export default function DiagramViewer({
                   Copy Code
                 </Button>
 
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1" style={{ minHeight: '450px' }}>
                   <textarea
                     value={plantUMLCode}
                     onChange={(e) => onCodeChange(e.target.value)}
@@ -479,10 +515,11 @@ export default function DiagramViewer({
                       isDarkMode
                         ? 'border-gray-700 bg-gray-900/50 text-gray-100'
                         : 'border-gray-200 bg-white/50 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none scrollbar-thin scrollbar-thumb-rounded`}
+                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none`}
                     style={{ 
                       overflow: 'auto',
-                      WebkitOverflowScrolling: 'touch'
+                      WebkitOverflowScrolling: 'touch',
+                      minHeight: '450px'
                     }}
                   />
                 </div>

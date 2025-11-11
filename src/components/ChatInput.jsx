@@ -27,11 +27,18 @@ export default function ChatInput({ onSend, disabled, isDarkMode, placeholder, c
     }
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e)
+    }
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
       className={cn(
-        'border-t backdrop-blur-md flex-shrink-0',
+        'border-t backdrop-blur-md flex-shrink-0 sticky bottom-0',
         isDarkMode ? 'bg-gray-900/95 border-gray-800' : 'bg-white/95 border-gray-200',
         compact ? 'p-3' : 'p-4'
       )}
@@ -42,12 +49,7 @@ export default function ChatInput({ onSend, disabled, isDarkMode, placeholder, c
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit(e)
-              }
-            }}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder || 'Type a message...'}
             disabled={disabled}
             rows={1}

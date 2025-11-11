@@ -10,13 +10,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure body and root maintain background and proper height */
+/* Allow body and root to scroll - CRITICAL FIX */
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
+}
+
+/* Remove overflow hidden that was preventing scrolling */
+html, body {
+  overflow-y: auto !important;
+  overflow-x: hidden;
 }
 
 /* Force scrollbars to always show scroll capability */
