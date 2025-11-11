@@ -1,4 +1,3 @@
-import gsap from 'gsap'
 import { useEffect, useRef } from 'react'
 
 export function useGSAPFadeIn(deps = []) {
@@ -6,11 +5,7 @@ export function useGSAPFadeIn(deps = []) {
 
   useEffect(() => {
     if (ref.current) {
-      gsap.fromTo(
-        ref.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
-      )
+      ref.current.classList.add('gsap-fade-in')
     }
   }, deps)
 
@@ -22,12 +17,8 @@ export function useGSAPSlideIn(direction = 'left', deps = []) {
 
   useEffect(() => {
     if (ref.current) {
-      const x = direction === 'left' ? -30 : 30
-      gsap.fromTo(
-        ref.current,
-        { opacity: 0, x },
-        { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' }
-      )
+      const className = direction === 'left' ? 'gsap-slide-in-left' : 'gsap-slide-in-right'
+      ref.current.classList.add(className)
     }
   }, deps)
 
@@ -39,11 +30,7 @@ export function useGSAPScaleIn(deps = []) {
 
   useEffect(() => {
     if (ref.current) {
-      gsap.fromTo(
-        ref.current,
-        { opacity: 0, scale: 0.9 },
-        { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out' }
-      )
+      ref.current.classList.add('gsap-scale-in')
     }
   }, deps)
 
@@ -56,17 +43,10 @@ export function useGSAPStagger(selector, delay = 0.1, deps = []) {
   useEffect(() => {
     if (ref.current) {
       const elements = ref.current.querySelectorAll(selector)
-      gsap.fromTo(
-        elements,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: delay,
-          ease: 'power2.out'
-        }
-      )
+      elements.forEach((element, index) => {
+        element.style.animationDelay = `${index * delay}s`
+        element.classList.add('gsap-fade-in')
+      })
     }
   }, deps)
 
@@ -75,19 +55,16 @@ export function useGSAPStagger(selector, delay = 0.1, deps = []) {
 
 export function useGSAPHover(ref) {
   const handleMouseEnter = () => {
-    gsap.to(ref.current, {
-      scale: 1.05,
-      duration: 0.3,
-      ease: 'power2.out'
-    })
+    if (ref.current) {
+      ref.current.style.transform = 'scale(1.05)'
+      ref.current.style.transition = 'transform 0.3s ease'
+    }
   }
 
   const handleMouseLeave = () => {
-    gsap.to(ref.current, {
-      scale: 1,
-      duration: 0.3,
-      ease: 'power2.out'
-    })
+    if (ref.current) {
+      ref.current.style.transform = 'scale(1)'
+    }
   }
 
   return { handleMouseEnter, handleMouseLeave }

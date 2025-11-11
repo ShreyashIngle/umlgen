@@ -171,7 +171,7 @@ export default function App() {
                 </h1>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Intelligent Diagrams</p>
               </div>
-            </div>
+            </motion.div>
 
             <div className="hidden lg:block flex-1 max-w-md mx-8">
               <ProgressStepper currentStep={currentStep} isDarkMode={isDarkMode} />

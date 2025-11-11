@@ -1,4 +1,3 @@
-import gsap from 'gsap'
 import { forwardRef, useRef } from 'react'
 import { cn } from '../utils/cn'
 
@@ -7,21 +6,14 @@ const Textarea = forwardRef(({ className, isDarkMode, ...props }, ref) => {
 
   const handleFocus = () => {
     if (innerRef.current) {
-      gsap.to(innerRef.current, {
-        scale: 1.01,
-        duration: 0.3,
-        ease: 'power2.out'
-      })
+      innerRef.current.style.transform = 'scale(1.01)'
+      innerRef.current.style.transition = 'transform 0.3s ease'
     }
   }
 
   const handleBlur = () => {
     if (innerRef.current) {
-      gsap.to(innerRef.current, {
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.out'
-      })
+      innerRef.current.style.transform = 'scale(1)'
     }
   }
 

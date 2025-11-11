@@ -1,5 +1,4 @@
-import { useRef } from 'react'
-import { useGSAPHover } from '../hooks/useGSAP'
+import { motion } from 'framer-motion'
 import { cn } from '../utils/cn'
 
 export default function Button({
@@ -11,9 +10,6 @@ export default function Button({
   className,
   ...props
 }) {
-  const ref = useRef(null)
-  const { handleMouseEnter, handleMouseLeave } = useGSAPHover(ref)
-
   const variants = {
     primary: 'gradient-btn text-white shadow-lg hover:shadow-xl',
     secondary: 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100',
@@ -28,8 +24,7 @@ export default function Button({
   }
 
   return (
-    <button
-      ref={ref}
+    <motion.button
       disabled={disabled || loading}
       className={cn(
         'font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 flex-shrink-0 whitespace-nowrap',
@@ -52,6 +47,6 @@ export default function Button({
         />
       )}
       {children}
-    </button>
+    </motion.button>
   )
 }
