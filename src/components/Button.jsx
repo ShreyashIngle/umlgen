@@ -33,9 +33,9 @@ export default function Button({
         disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         className
       )}
-      whileHover={!disabled && !loading ? { scale: 1.02 } : {}}
-      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
-      transition={{ duration: 0.15 }}
+      whileHover={!disabled && !loading ? { scale: 1.01 } : {}}
+      whileTap={!disabled && !loading ? { scale: 0.99 } : {}}
+      transition={{ duration: 0.1 }}
       style={{ transformOrigin: 'center' }}
       {...props}
     >
@@ -43,7 +43,7 @@ export default function Button({
         <motion.div 
           className="w-4 h-4 border-2 border-transparent border-t-white rounded-full"
           animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
         />
       )}
       {children}

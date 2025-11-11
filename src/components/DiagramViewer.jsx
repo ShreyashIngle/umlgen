@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Code2, Copy, Download, Eye, Maximize2, X } from 'lucide-react'
+import { ArrowLeft, Code2, Copy, Download, Eye, Maximize2, Minus, Plus, RotateCcw, X } from 'lucide-react'
 import { encode } from 'plantuml-encoder'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { cn } from '../utils/cn'
 import Button from './Button'
@@ -17,6 +17,10 @@ export default function DiagramViewer({
 }) {
   const [showCode, setShowCode] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
+  const imageRef = useRef(null)
+  const containerRef = useRef(null)
 
   // Encode PlantUML code to generate diagram URL
   const diagramUrl = useMemo(() => {
@@ -80,6 +84,101 @@ export default function DiagramViewer({
     }
   }
 
+  // Enhanced zoom functions with bounds
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 5))
+  }
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.1))
+  }
+
+  const handleResetZoom = () => {
+    setZoomLevel(1)
+    setPanOffset({ x: 0, y: 0 })
+  }
+
+  // Manual zoom with mouse wheel - REDUCED SENSITIVITY
+  const handleWheel = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      // Reduced delta from 0.1 to 0.05 for smoother zoom
+      const delta = e.deltaY > 0 ? -0.05 : 0.05
+      setZoomLevel(prev => Math.max(0.1, Math.min(5, prev + delta)))
+    }
+  }
+
+  // Touch/pinch zoom - SMOOTHED AND REDUCED SENSITIVITY
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0]
+      const touch2 = e.touches[1]
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) + 
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      )
+      imageRef.current.dataset.initialDistance = distance
+      imageRef.current.dataset.initialZoom = zoomLevel
+    }
+  }
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault()
+      const touch1 = e.touches[0]
+      const touch2 = e.touches[1]
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) + 
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      )
+      
+      const initialDistance = parseFloat(imageRef.current.dataset.initialDistance)
+      const initialZoom = parseFloat(imageRef.current.dataset.initialZoom)
+      
+      if (initialDistance && initialZoom) {
+        const scale = distance / initialDistance
+        // Reduced sensitivity by dampening the scale factor
+        const dampedScale = 1 + (scale - 1) * 0.5
+        const newZoom = Math.max(0.1, Math.min(5, initialZoom * dampedScale))
+        setZoomLevel(newZoom)
+      }
+    }
+  }
+
+  // Throttled event listeners to reduce lag
+  const throttle = (func, limit) => {
+    let inThrottle
+    return function() {
+      const args = arguments
+      const context = this
+      if (!inThrottle) {
+        func.apply(context, args)
+        inThrottle = true
+        setTimeout(() => inThrottle = false, limit)
+      }
+    }
+  }
+
+  // Add event listeners with throttling
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    // Throttled handlers for better performance
+    const throttledWheel = throttle(handleWheel, 16) // ~60fps
+    const throttledTouchMove = throttle(handleTouchMove, 16) // ~60fps
+
+    container.addEventListener('wheel', throttledWheel, { passive: false })
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchmove', throttledTouchMove, { passive: false })
+
+    return () => {
+      container.removeEventListener('wheel', throttledWheel)
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', throttledTouchMove)
+    }
+  }, [zoomLevel])
+
   return (
     <>
       {/* Fullscreen Modal - Shows either Preview or Code based on tab */}
@@ -107,6 +206,24 @@ export default function DiagramViewer({
               </div>
               
               <div className="flex gap-3 items-center">
+                {/* Zoom Controls for Fullscreen Preview */}
+                {!showCode && diagramUrl && (
+                  <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
+                    <Button onClick={handleZoomOut} variant="ghost" size="sm" className="p-1">
+                      <Minus size={14} />
+                    </Button>
+                    <span className="text-xs px-2 min-w-[3rem] text-center">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <Button onClick={handleZoomIn} variant="ghost" size="sm" className="p-1">
+                      <Plus size={14} />
+                    </Button>
+                    <Button onClick={handleResetZoom} variant="ghost" size="sm" className="p-1">
+                      <RotateCcw size={14} />
+                    </Button>
+                  </div>
+                )}
+
                 {/* Tab Switcher in Fullscreen */}
                 <div className={`flex gap-1 p-1 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                   <button
@@ -187,13 +304,17 @@ export default function DiagramViewer({
             {/* Fullscreen Content */}
             <AnimatePresence mode="wait">
               {!showCode ? (
-                // Fullscreen Preview
+                // Fullscreen Preview with Manual Zoom
                 <motion.div
                   key="fs-preview"
-                  className="flex-1 overflow-auto flex items-center justify-center p-8"
+                  ref={containerRef}
+                  className="flex-1 overflow-auto p-8"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  style={{
+                    cursor: zoomLevel > 1 ? 'grab' : 'default'
+                  }}
                 >
                   {isLoading ? (
                     <motion.div className="text-center">
@@ -213,22 +334,41 @@ export default function DiagramViewer({
                       </motion.p>
                     </motion.div>
                   ) : diagramUrl ? (
-                    <motion.div
-                      className="flex items-center justify-center w-full h-full"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
+                    <div className="w-full h-full flex items-center justify-center">
                       <motion.img
+                        ref={imageRef}
                         src={diagramUrl}
                         alt="UML Diagram Full Preview"
-                        className="max-w-full max-h-full rounded-xl shadow-2xl"
+                        className="rounded-xl shadow-2xl select-none"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.1 }}
-                        whileHover={{ scale: 1.02 }}
+                        style={{
+                          transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+                          transformOrigin: 'center',
+                          // FIT TO CONTAINER - NO HORIZONTAL SCROLL
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          width: 'auto',
+                          height: 'auto',
+                          objectFit: 'contain',
+                          cursor: zoomLevel > 1 ? 'grab' : 'default',
+                          userSelect: 'none',
+                          pointerEvents: 'auto',
+                          willChange: 'transform',
+                          transition: 'transform 0.1s ease-out'
+                        }}
+                        drag={zoomLevel > 1}
+                        dragConstraints={{ left: -800, right: 800, top: -800, bottom: 800 }}
+                        dragElastic={0.05}
+                        onDrag={(e, info) => {
+                          setPanOffset({
+                            x: panOffset.x + info.delta.x * 0.8,
+                            y: panOffset.y + info.delta.y * 0.8
+                          })
+                        }}
                       />
-                    </motion.div>
+                    </div>
                   ) : (
                     <motion.div className="text-center">
                       <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl mb-4">
@@ -295,6 +435,24 @@ export default function DiagramViewer({
               </div>
             </div>
             <motion.div className="flex gap-2 flex-shrink-0">
+              {/* Zoom Controls for Regular View */}
+              {!showCode && diagramUrl && (
+                <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1 mr-2">
+                  <Button onClick={handleZoomOut} variant="ghost" size="sm" className="p-1">
+                    <Minus size={12} />
+                  </Button>
+                  <span className="text-xs px-2 min-w-[2.5rem] text-center">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  <Button onClick={handleZoomIn} variant="ghost" size="sm" className="p-1">
+                    <Plus size={12} />
+                  </Button>
+                  <Button onClick={handleResetZoom} variant="ghost" size="sm" className="p-1">
+                    <RotateCcw size={12} />
+                  </Button>
+                </div>
+              )}
+
               {!fullScreen && (
                 <Button
                   onClick={() => setIsFullscreen(true)}
@@ -394,14 +552,14 @@ export default function DiagramViewer({
           </motion.div>
         </motion.div>
 
-        {/* Content - Scrollable with minimum height */}
+        {/* Content - Scrollable with manual zoom support */}
         <div className="w-full" style={{ minHeight: fullScreen ? '600px' : '500px' }}>
           <AnimatePresence mode="wait">
             {!showCode && (
               <motion.div
                 key="preview"
                 className={cn(
-                  "w-full",
+                  "w-full h-full",
                   fullScreen ? "p-8" : "p-6"
                 )}
                 style={{ minHeight: fullScreen ? '600px' : '500px' }}
@@ -430,31 +588,53 @@ export default function DiagramViewer({
                   </motion.div>
                 ) : diagramUrl ? (
                   <div
+                    ref={containerRef}
                     className={cn(
-                      "w-full rounded-xl border-2 p-4",
+                      "w-full h-full rounded-xl border-2 p-4",
                       isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'
                     )}
                     style={{ 
-                      overflow: 'auto',
-                      WebkitOverflowScrolling: 'touch',
-                      minHeight: '400px'
+                      cursor: zoomLevel > 1 ? 'grab' : 'default',
+                      // PREVENT HORIZONTAL SCROLL BY DEFAULT
+                      overflowX: zoomLevel > 1 ? 'auto' : 'hidden',
+                      overflowY: zoomLevel > 1 ? 'auto' : 'hidden'
                     }}
                   >
-                    <motion.img
-                      src={diagramUrl}
-                      alt="UML Diagram"
-                      className="rounded-lg shadow-2xl"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      style={{ 
-                        maxWidth: 'none',
-                        width: 'auto',
-                        height: 'auto',
-                        display: 'block',
-                        margin: '0 auto'
-                      }}
-                    />
+                    <div className="flex items-center justify-center w-full h-full">
+                      <motion.img
+                        ref={imageRef}
+                        src={diagramUrl}
+                        alt="UML Diagram"
+                        className="rounded-lg shadow-2xl select-none"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        style={{ 
+                          transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+                          transformOrigin: 'center',
+                          // RESPONSIVE SIZING - FIT CONTAINER
+                          maxWidth: zoomLevel <= 1 ? '100%' : 'none',
+                          maxHeight: zoomLevel <= 1 ? '100%' : 'none',
+                          width: zoomLevel <= 1 ? 'auto' : 'auto',
+                          height: zoomLevel <= 1 ? 'auto' : 'auto',
+                          objectFit: 'contain',
+                          cursor: zoomLevel > 1 ? 'grab' : 'default',
+                          userSelect: 'none',
+                          pointerEvents: 'auto',
+                          willChange: 'transform',
+                          transition: 'transform 0.1s ease-out'
+                        }}
+                        drag={zoomLevel > 1}
+                        dragConstraints={{ left: -400, right: 400, top: -400, bottom: 400 }}
+                        dragElastic={0.05}
+                        onDrag={(e, info) => {
+                          setPanOffset({
+                            x: panOffset.x + (info.delta.x / zoomLevel) * 0.6,
+                            y: panOffset.y + (info.delta.y / zoomLevel) * 0.6
+                          })
+                        }}
+                      />
+                    </div>
                   </div>
                 ) : (
                   <motion.div className="flex items-center justify-center" style={{ minHeight: '400px' }}>

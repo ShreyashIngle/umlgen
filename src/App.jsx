@@ -10,6 +10,7 @@ import LoadingAnimation from './components/LoadingAnimation'
 import MessageBubble from './components/MessageBubble'
 import ProgressStepper from './components/ProgressStepper'
 import { generateUMLWithGemini } from './services/geminiService'
+import { loadApiKey, saveApiKey, clearApiKey } from './utils/encryption'
 
 const DIAGRAM_TYPES = [
   'Use Case Diagram',
@@ -49,6 +50,23 @@ export default function App() {
   // Close modal if API key is set
   useEffect(() => {
     if (apiKey.trim()) {
+      setShowApiModal(false)
+    }
+  }, [apiKey])
+
+  // Load encrypted API key on app start
+  useEffect(() => {
+    const savedApiKey = loadApiKey()
+    if (savedApiKey) {
+      setApiKey(savedApiKey)
+      setShowApiModal(false)
+    }
+  }, [])
+
+  // Save API key when it changes
+  useEffect(() => {
+    if (apiKey.trim()) {
+      saveApiKey(apiKey)
       setShowApiModal(false)
     }
   }, [apiKey])
@@ -143,6 +161,13 @@ export default function App() {
     toast.success('Chat cleared')
   }
 
+  const handleClearApiKey = () => {
+    clearApiKey()
+    setApiKey('')
+    setShowApiModal(true)
+    toast.success('API key cleared')
+  }
+
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       {/* Wrapper with min-height instead of fixed height */}
@@ -183,9 +208,21 @@ export default function App() {
                 variant={apiKey ? 'ghost' : 'primary'}
                 size="sm"
                 className="p-2"
+                title={apiKey ? 'Manage API Key' : 'Set API Key'}
               >
                 <Settings size={20} />
               </Button>
+              {apiKey && (
+                <Button
+                  onClick={handleClearApiKey}
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 text-red-500 hover:text-red-400"
+                  title="Clear API Key"
+                >
+                  🗑️
+                </Button>
+              )}
               <Button
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 variant="ghost"
@@ -215,15 +252,15 @@ export default function App() {
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={e => e.stopPropagation()}
               >
-                <h2 className="text-2xl font-bold mb-4">🔑 Setup API Key</h2>
+                <h2 className="text-2xl font-bold mb-4">🔑 API Key Management</h2>
                 <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Enter your Gemini API key to get started generating UML diagrams.
+                  {apiKey ? 'Update your Gemini API key or clear it.' : 'Enter your Gemini API key to get started generating UML diagrams.'}
                 </p>
                 <input
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
+                  placeholder={apiKey ? '••••••••••••••••' : 'Enter API key...'}
                   className={`w-full px-4 py-3 rounded-lg border-2 mb-4 ${isDarkMode ? 'bg-gray-800 border-gray-700 focus:border-cyan-500' : 'bg-gray-50 border-gray-300 focus:border-indigo-500'} focus:outline-none focus:ring-2 focus:ring-cyan-500/20`}
                   autoFocus
                 />
@@ -232,14 +269,26 @@ export default function App() {
                   <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline font-semibold">
                     Google AI Studio
                   </a>
+                  {apiKey && <span className="block mt-1 text-green-500">✓ API key is securely encrypted and stored locally</span>}
                 </p>
-                <Button
-                  onClick={() => apiKey.trim() && setShowApiModal(false)}
-                  disabled={!apiKey.trim()}
-                  className="w-full"
-                >
-                  Continue
-                </Button>
+                <div className="flex gap-3">
+                  {apiKey && (
+                    <Button
+                      onClick={handleClearApiKey}
+                      variant="secondary"
+                      className="flex-1"
+                    >
+                      Clear Key
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => apiKey.trim() && setShowApiModal(false)}
+                    disabled={!apiKey.trim()}
+                    className="flex-1"
+                  >
+                    {apiKey ? 'Update' : 'Save'}
+                  </Button>
+                </div>
               </motion.div>
             </motion.div>
           )}

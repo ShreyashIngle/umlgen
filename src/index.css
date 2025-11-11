@@ -355,3 +355,97 @@ button, input, select, textarea {
   border-left: 2px solid rgba(99, 102, 241, 0.8);
   border-right: 2px solid rgba(99, 102, 241, 0.8);
 }
+
+/* Enhanced zoom and drag cursors */
+.zoom-cursor {
+  cursor: zoom-in;
+}
+
+.zoom-cursor.zoomed {
+  cursor: grab;
+}
+
+.zoom-cursor.zoomed:active {
+  cursor: grabbing;
+}
+
+/* Manual zoom interaction styles - RESPONSIVE CONTAINER */
+.zoom-container {
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
+  /* ENSURE CONTAINER RESPECTS BOUNDARIES */
+  box-sizing: border-box;
+  overflow: hidden; /* Hidden by default, shown only when zoomed */
+}
+
+/* Image container for proper sizing */
+.zoom-container > div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* Prevent image selection and context menu during zoom - FIT TO CONTAINER */
+.zoom-container img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: auto;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimizeQuality;
+  /* RESPONSIVE IMAGE SIZING */
+  display: block;
+  object-fit: contain;
+}
+
+/* Responsive diagram sizing */
+@media (max-width: 768px) {
+  .zoom-container {
+    padding: 8px;
+  }
+  
+  .zoom-container img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
+
+/* Large screen optimization */
+@media (min-width: 1200px) {
+  .zoom-container img {
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
+/* Reduced motion for sensitive users */
+@media (prefers-reduced-motion: reduce) {
+  .zoom-transition,
+  .zoom-container img {
+    transition: none;
+  }
+  
+  .smooth-pulse {
+    animation: none;
+  }
+}
