@@ -10,8 +10,56 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* GSAP animations */
-@keyframes gsap-fade-in {
+/* Ensure body and root maintain background and proper height */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Force scrollbars to always show scroll capability */
+.overflow-auto,
+.overflow-y-auto {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Force overflow to be visible and scrollable */
+.overflow-auto,
+.overflow-y-auto,
+[style*="overflow: auto"] {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth;
+}
+
+/* Better min-height handling */
+.min-h-0 {
+  min-height: 0 !important;
+}
+
+/* Smooth scrolling for all containers */
+.overflow-auto,
+.overflow-y-auto {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Typing animation */
+@keyframes typing {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.typing-animation {
+  animation: typing 1.4s infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -102,17 +150,136 @@ body {
   @apply bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Always visible when scrolling */
 ::-webkit-scrollbar {
   @apply w-2 h-2;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  margin: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-blue-500/50 rounded-full hover:bg-blue-600;
+  background: rgba(99, 102, 241, 0.6);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  min-height: 40px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.9);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(99, 102, 241, 1);
+}
+
+/* Dark mode scrollbar - More visible */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.7);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.95);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background: rgba(99, 102, 241, 1);
+}
+
+/* Thin scrollbar variant - Still visible */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thumb-rounded::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  min-height: 30px;
+}
+
+/* Firefox scrollbar - Always visible */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.6) rgba(0, 0, 0, 0.05);
+}
+
+.dark * {
+  scrollbar-color: rgba(99, 102, 241, 0.7) rgba(255, 255, 255, 0.05);
+}
+
+/* Ensure images don't break layout */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Ensure images can exceed container */
+img {
+  max-width: none !important;
+  height: auto;
+}
+
+/* Better scrollbar for diagram containers */
+div[style*="overflow: auto"] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.6) rgba(0, 0, 0, 0.1);
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.6);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.9);
+}
+
+/* Prevent text overflow */
+p, span, div {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Smooth scrolling everywhere */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better mobile touch scrolling */
+@media (max-width: 768px) {
+  .overflow-auto,
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: y proximity;
+  }
 }
 
 /* Smooth transitions */
@@ -156,4 +323,29 @@ button, input, select, textarea {
     transparent 100%
   );
   background-size: 1000px 100%;
+}
+
+/* Split pane styling */
+.Resizer {
+  background: rgba(99, 102, 241, 0.2);
+  opacity: 0.5;
+  z-index: 1;
+  box-sizing: border-box;
+  background-clip: padding-box;
+}
+
+.Resizer:hover {
+  transition: all 0.3s ease;
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.5);
+}
+
+.Resizer.vertical {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.Resizer.vertical:hover {
+  border-left: 2px solid rgba(99, 102, 241, 0.8);
+  border-right: 2px solid rgba(99, 102, 241, 0.8);
 }

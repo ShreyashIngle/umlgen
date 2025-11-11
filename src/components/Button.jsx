@@ -32,17 +32,24 @@ export default function Button({
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'font-semibold rounded-lg transition-all duration-300 flex items-center justify-center gap-2',
+        'font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 flex-shrink-0',
         variants[variant],
         sizes[size],
-        disabled && 'opacity-50 cursor-not-allowed',
+        disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         className
       )}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      whileHover={!disabled && !loading ? { scale: 1.02 } : {}}
+      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
+      transition={{ duration: 0.15 }}
       {...props}
     >
-      {loading && <div className="w-4 h-4 border-2 border-transparent border-t-white rounded-full spin-smooth" />}
+      {loading && (
+        <motion.div 
+          className="w-4 h-4 border-2 border-transparent border-t-white rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        />
+      )}
       {children}
     </button>
   )
