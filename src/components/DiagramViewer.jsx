@@ -590,17 +590,17 @@ export default function DiagramViewer({
                   <div
                     ref={containerRef}
                     className={cn(
-                      "w-full h-full rounded-xl border-2 p-4",
+                      "w-full h-full rounded-xl border-2 p-4 zoom-container",
                       isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'
                     )}
                     style={{ 
                       cursor: zoomLevel > 1 ? 'grab' : 'default',
-                      // PREVENT HORIZONTAL SCROLL BY DEFAULT
-                      overflowX: zoomLevel > 1 ? 'auto' : 'hidden',
-                      overflowY: zoomLevel > 1 ? 'auto' : 'hidden'
+                      // KEEP HORIZONTAL SCROLL ALWAYS AVAILABLE FOR LARGE DIAGRAMS
+                      overflowX: 'auto',
+                      overflowY: 'auto'
                     }}
                   >
-                    <div className="flex items-center justify-center w-full h-full">
+                    <div className="flex items-center justify-center w-full h-full min-w-fit">
                       <motion.img
                         ref={imageRef}
                         src={diagramUrl}
@@ -612,12 +612,12 @@ export default function DiagramViewer({
                         style={{ 
                           transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                           transformOrigin: 'center',
-                          // RESPONSIVE SIZING - FIT CONTAINER
-                          maxWidth: zoomLevel <= 1 ? '100%' : 'none',
-                          maxHeight: zoomLevel <= 1 ? '100%' : 'none',
-                          width: zoomLevel <= 1 ? 'auto' : 'auto',
-                          height: zoomLevel <= 1 ? 'auto' : 'auto',
-                          objectFit: 'contain',
+                          // ALLOW NATURAL IMAGE SIZE WITH SCROLL
+                          minWidth: 'fit-content',
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          width: 'auto',
+                          height: 'auto',
                           cursor: zoomLevel > 1 ? 'grab' : 'default',
                           userSelect: 'none',
                           pointerEvents: 'auto',

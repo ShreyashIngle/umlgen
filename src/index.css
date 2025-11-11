@@ -369,7 +369,7 @@ button, input, select, textarea {
   cursor: grabbing;
 }
 
-/* Manual zoom interaction styles - RESPONSIVE CONTAINER */
+/* Manual zoom interaction styles - ALLOW HORIZONTAL SCROLL */
 .zoom-container {
   touch-action: pan-x pan-y pinch-zoom;
   -webkit-touch-callout: none;
@@ -381,23 +381,24 @@ button, input, select, textarea {
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   -webkit-overflow-scrolling: touch;
-  scroll-behavior: auto;
-  /* ENSURE CONTAINER RESPECTS BOUNDARIES */
+  scroll-behavior: smooth;
   box-sizing: border-box;
-  overflow: hidden; /* Hidden by default, shown only when zoomed */
+  /* ENABLE SCROLLING FOR LARGE DIAGRAMS */
+  overflow: auto;
 }
 
-/* Image container for proper sizing */
+/* Image container for proper sizing - ALLOW HORIZONTAL EXPANSION */
 .zoom-container > div {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  /* ALLOW CONTENT TO EXPAND HORIZONTALLY */
+  min-width: fit-content;
 }
 
-/* Prevent image selection and context menu during zoom - FIT TO CONTAINER */
+/* Prevent image selection and context menu during zoom - NATURAL SIZING */
 .zoom-container img {
   -webkit-user-drag: none;
   -khtml-user-drag: none;
@@ -413,29 +414,53 @@ button, input, select, textarea {
   -webkit-transform: translateZ(0);
   image-rendering: -webkit-optimize-contrast;
   image-rendering: optimizeQuality;
-  /* RESPONSIVE IMAGE SIZING */
+  /* NATURAL IMAGE SIZING WITH SCROLL SUPPORT */
   display: block;
   object-fit: contain;
+  min-width: fit-content;
 }
 
-/* Responsive diagram sizing */
-@media (max-width: 768px) {
-  .zoom-container {
-    padding: 8px;
-  }
-  
-  .zoom-container img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
+/* Enhanced scrollbar for better UX with horizontal content */
+.zoom-container::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
 }
 
-/* Large screen optimization */
-@media (min-width: 1200px) {
-  .zoom-container img {
-    max-width: 100%;
-    max-height: 100%;
-  }
+.zoom-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin: 2px;
+}
+
+.zoom-container::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.8);
+  border-radius: 12px;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.3);
+}
+
+.zoom-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 1);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.5);
+}
+
+.zoom-container::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode zoom scrollbar with better contrast */
+.dark .zoom-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .zoom-container::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.4);
+}
+
+.dark .zoom-container::-webkit-scrollbar-corner {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Reduced motion for sensitive users */
