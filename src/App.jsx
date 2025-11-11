@@ -37,6 +37,7 @@ export default function App() {
   const [selectedDiagramType, setSelectedDiagramType] = useState('')
   const [showDiagramSelector, setShowDiagramSelector] = useState(false)
   const [isChatCollapsed, setIsChatCollapsed] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
 
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)
@@ -147,9 +148,9 @@ export default function App() {
       <div className={`min-h-screen w-full flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-gray-900 text-gray-100' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900'}`}>
         <Toaster position="top-right" />
 
-        {/* Header */}
+        {/* Header - Fixed */}
         <motion.header
-          className={`border-b backdrop-blur-xl sticky top-0 z-50 ${isDarkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-white/80 border-gray-200'} shadow-lg`}
+          className={`border-b backdrop-blur-xl sticky top-0 z-50 ${isDarkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-white/80 border-gray-200'} shadow-lg flex-shrink-0`}
           initial={{ y: -100 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5 }}
@@ -243,20 +244,123 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Main Content */}
-        <main className="flex-1 w-full px-4 sm:px-6 py-4 overflow-hidden flex flex-col">
-          <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden">
+        {/* Edit Dialog - Popup */}
+        <AnimatePresence>
+          {showEditDialog && hasGenerated && (
+            <motion.div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEditDialog(false)}
+            >
+              <motion.div
+                className={`rounded-2xl border-2 p-6 max-w-2xl w-full max-h-[80vh] flex flex-col ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">✏️ Edit Diagram</h2>
+                  <button
+                    onClick={() => setShowEditDialog(false)}
+                    className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-thin scrollbar-thumb-rounded">
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold">Project Context</label>
+                    <textarea
+                      value={projectContext}
+                      onChange={(e) => setProjectContext(e.target.value)}
+                      className={`w-full px-4 py-3 rounded-lg border-2 resize-none ${
+                        isDarkMode
+                          ? 'bg-gray-800 border-gray-700 focus:border-cyan-500'
+                          : 'bg-gray-50 border-gray-300 focus:border-indigo-500'
+                      } focus:outline-none focus:ring-2 focus:ring-cyan-500/20`}
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold">Modification Request</label>
+                    <ChatInput
+                      onSend={(text) => {
+                        handleSendMessage(text)
+                        setShowEditDialog(false)
+                      }}
+                      disabled={isLoading}
+                      isDarkMode={isDarkMode}
+                      placeholder="Describe what you want to change..."
+                      compact
+                    />
+                  </div>
+
+                  <div className="border-t pt-4 space-y-2">
+                    <p className="text-sm font-semibold">Recent Messages</p>
+                    <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin">
+                      {messages.slice(-3).map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`p-2 rounded-lg text-xs ${
+                            msg.isUser
+                              ? isDarkMode
+                                ? 'bg-indigo-900/50'
+                                : 'bg-indigo-100'
+                              : isDarkMode
+                              ? 'bg-gray-800/50'
+                              : 'bg-gray-100'
+                          }`}
+                        >
+                          {msg.text.substring(0, 100)}...
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setShowEditDialog(false)}
+                    variant="ghost"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      handleClearChat()
+                      setShowEditDialog(false)
+                    }}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    Start New
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content - Always scrollable */}
+        <main className="flex-1 w-full px-4 sm:px-6 py-4 min-h-0 flex flex-col">
+          <div className="max-w-7xl mx-auto w-full flex-1 min-h-0 flex flex-col">
             <AnimatePresence mode="wait">
               {!hasGenerated ? (
                 // Chat Only View
                 <motion.div
                   key="chat-only"
-                  className="flex-1 flex overflow-hidden"
+                  className="flex-1 flex min-h-0"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <Card isDarkMode={isDarkMode} className="w-full h-full p-0 flex flex-col shadow-2xl overflow-hidden">
+                  <Card isDarkMode={isDarkMode} className="w-full flex-1 p-0 flex flex-col shadow-2xl min-h-0">
                     {/* Header */}
                     <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between flex-shrink-0`}>
                       <h2 className="text-xl font-bold">Chat</h2>
@@ -270,8 +374,15 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Messages - Scrollable */}
-                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+                    {/* Messages - Always scrollable */}
+                    <div 
+                      ref={chatContainerRef} 
+                      className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-rounded"
+                      style={{ 
+                        overflowY: 'scroll',
+                        WebkitOverflowScrolling: 'touch'
+                      }}
+                    >
                       <AnimatePresence>
                         {messages.map((msg) => (
                           <div key={msg.id}>
@@ -320,7 +431,7 @@ export default function App() {
                     </div>
 
                     {/* Input - Fixed at bottom */}
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 sticky bottom-0">
                       <ChatInput
                         onSend={handleSendMessage}
                         disabled={isLoading || showDiagramSelector}
@@ -331,126 +442,59 @@ export default function App() {
                   </Card>
                 </motion.div>
               ) : (
-                // Split View with Diagram
+                // Full Screen Diagram View (No Split) - Step 4
                 <motion.div
-                  key="split-view"
-                  className="flex-1 grid gap-4 relative overflow-hidden"
-                  style={{
-                    gridTemplateColumns: isChatCollapsed ? '0px 1fr' : 'minmax(300px, 350px) 1fr',
-                    gridTemplateRows: '1fr'
-                  }}
+                  key="diagram-view"
+                  className="flex-1 min-h-0 flex relative"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  {/* Left - Collapsible Chat Panel */}
-                  <AnimatePresence>
-                    {!isChatCollapsed && (
-                      <motion.div
-                        initial={{ x: -50, opacity: 0, width: 0 }}
-                        animate={{ x: 0, opacity: 1, width: 'auto' }}
-                        exit={{ x: -50, opacity: 0, width: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="relative overflow-hidden"
-                      >
-                        <Card isDarkMode={isDarkMode} className="h-full flex flex-col shadow-xl overflow-hidden">
-                          {/* Chat Header */}
-                          <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex items-center justify-between flex-shrink-0`}>
-                            <h3 className="font-bold text-base">Messages</h3>
-                            <div className="flex gap-2 items-center">
-                              <Button onClick={handleClearChat} variant="ghost" size="sm" className="p-1.5">
-                                <Trash2 size={16} />
-                              </Button>
-                              <Button onClick={() => setIsChatCollapsed(true)} variant="ghost" size="sm" className="p-1.5">
-                                <ChevronLeft size={16} />
-                              </Button>
-                            </div>
-                          </div>
+                  {/* Full Width Diagram Viewer */}
+                  <DiagramViewer
+                    plantUMLCode={plantUMLCode}
+                    isLoading={isLoading}
+                    onCodeChange={setPlantUMLCode}
+                    isDarkMode={isDarkMode}
+                    onNewDiagram={() => {
+                      setHasGenerated(false)
+                      setIsChatCollapsed(false)
+                    }}
+                    fullScreen
+                  />
 
-                          {/* Messages List - Scrollable */}
-                          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-rounded min-h-0">
-                            <AnimatePresence>
-                              {messages.slice(-8).map((msg) => (
-                                <motion.div
-                                  key={msg.id}
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, y: -10 }}
-                                  className={`p-3 rounded-lg text-sm shadow-sm ${
-                                    msg.isUser 
-                                      ? isDarkMode 
-                                        ? 'bg-indigo-900/50 border border-indigo-700/50' 
-                                        : 'bg-indigo-100 border border-indigo-200'
-                                      : isDarkMode 
-                                      ? 'bg-gray-800/50 border border-gray-700/50' 
-                                      : 'bg-gray-100 border border-gray-200'
-                                  }`}
-                                >
-                                  <div className="flex items-start gap-2">
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                      msg.isUser ? 'bg-indigo-500' : 'bg-cyan-500'
-                                    }`}>
-                                      <span className="text-white text-xs">
-                                        {msg.isUser ? '👤' : '🤖'}
-                                      </span>
-                                    </div>
-                                    <p className="leading-relaxed break-words flex-1">{msg.text}</p>
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </AnimatePresence>
-                          </div>
-
-                          {/* Input - Fixed at bottom */}
-                          <div className="flex-shrink-0">
-                            <ChatInput
-                              onSend={handleSendMessage}
-                              disabled={isLoading}
-                              isDarkMode={isDarkMode}
-                              placeholder="Modify the diagram..."
-                              compact
-                            />
-                          </div>
-                        </Card>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Collapse/Expand Button */}
-                  {isChatCollapsed && (
-                    <motion.button
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      onClick={() => setIsChatCollapsed(false)}
-                      className={`absolute left-4 top-4 z-10 p-3 rounded-xl shadow-lg backdrop-blur-md transition-all ${
-                        isDarkMode 
-                          ? 'bg-gray-800/90 hover:bg-gray-700/90 border border-gray-700' 
-                          : 'bg-white/90 hover:bg-gray-100/90 border border-gray-200'
-                      }`}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <ChevronRight size={20} />
-                    </motion.button>
-                  )}
-
-                  {/* Right - Diagram Viewer */}
-                  <motion.div
-                    layout
-                    transition={{ duration: 0.3 }}
-                    className="relative overflow-hidden"
+                  {/* Floating Edit Button - Bottom Right */}
+                  <motion.button
+                    onClick={() => setShowEditDialog(true)}
+                    className={`fixed bottom-8 right-8 p-4 rounded-full shadow-2xl backdrop-blur-md z-40 ${
+                      isDarkMode
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'
+                        : 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600'
+                    } text-white transition-all`}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.9 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
                   >
-                    <DiagramViewer
-                      plantUMLCode={plantUMLCode}
-                      isLoading={isLoading}
-                      onCodeChange={setPlantUMLCode}
-                      isDarkMode={isDarkMode}
-                      onNewDiagram={() => {
-                        setHasGenerated(false)
-                        setIsChatCollapsed(false)
-                      }}
-                    />
-                  </motion.div>
+                    <div className="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      <span className="font-semibold hidden sm:inline">Edit</span>
+                    </div>
+                  </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>

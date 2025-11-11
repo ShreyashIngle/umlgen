@@ -16,6 +16,24 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  position: relative;
+}
+
+/* Force scrollbars to always show scroll capability */
+.overflow-auto,
+.overflow-y-auto {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Force overflow to be visible and scrollable */
+.overflow-auto,
+.overflow-y-auto,
+[style*="overflow: auto"] {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth;
 }
 
 /* Better min-height handling */
@@ -206,7 +224,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar - Enhanced with better visibility */
+/* Custom scrollbar - Always visible when scrolling */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -215,63 +233,128 @@ html {
 ::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 10px;
+  margin: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.6);
   border-radius: 10px;
   transition: background 0.2s ease;
   border: 2px solid transparent;
   background-clip: padding-box;
+  min-height: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.8);
-  border: 2px solid transparent;
+  background: rgba(99, 102, 241, 0.9);
+  border: 1px solid transparent;
   background-clip: padding-box;
 }
 
-/* Dark mode scrollbar */
+::-webkit-scrollbar-thumb:active {
+  background: rgba(99, 102, 241, 1);
+}
+
+/* Dark mode scrollbar - More visible */
 .dark ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.7);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.9);
-  border: 2px solid transparent;
+  background: rgba(99, 102, 241, 0.95);
+  border: 1px solid transparent;
   background-clip: padding-box;
 }
 
-/* Thin scrollbar variant */
+.dark ::-webkit-scrollbar-thumb:active {
+  background: rgba(99, 102, 241, 1);
+}
+
+/* Thin scrollbar variant - Still visible */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 .scrollbar-thumb-rounded::-webkit-scrollbar-thumb {
   border-radius: 10px;
+  min-height: 30px;
 }
 
-/* Firefox scrollbar */
+/* Firefox scrollbar - Always visible */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.5) transparent;
+  scrollbar-color: rgba(99, 102, 241, 0.6) rgba(0, 0, 0, 0.05);
 }
 
 .dark * {
-  scrollbar-color: rgba(99, 102, 241, 0.6) rgba(255, 255, 255, 0.03);
+  scrollbar-color: rgba(99, 102, 241, 0.7) rgba(255, 255, 255, 0.05);
 }
 
-/* Prevent content overflow */
+/* Ensure images don't break layout */
 img {
   max-width: 100%;
   height: auto;
+  display: block;
+}
+
+/* Ensure images can exceed container */
+img {
+  max-width: none !important;
+  height: auto;
+}
+
+/* Better scrollbar for diagram containers */
+div[style*="overflow: auto"] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.6) rgba(0, 0, 0, 0.1);
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.6);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+div[style*="overflow: auto"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.9);
+}
+
+/* Prevent text overflow */
+p, span, div {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Smooth scrolling everywhere */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better mobile touch scrolling */
+@media (max-width: 768px) {
+  .overflow-auto,
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: y proximity;
+  }
 }
 
 /* Floating animation */

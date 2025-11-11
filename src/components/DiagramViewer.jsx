@@ -3,6 +3,7 @@ import { ArrowLeft, Code2, Copy, Download, Eye, Maximize2, X } from 'lucide-reac
 import { encode } from 'plantuml-encoder'
 import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { cn } from '../utils/cn'
 import Button from './Button'
 import Card from './Card'
 
@@ -11,7 +12,8 @@ export default function DiagramViewer({
   isLoading,
   onCodeChange,
   isDarkMode,
-  onNewDiagram
+  onNewDiagram,
+  fullScreen = false
 }) {
   const [showCode, setShowCode] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -280,7 +282,10 @@ export default function DiagramViewer({
       </AnimatePresence>
 
       {/* Main Card */}
-      <Card isDarkMode={isDarkMode} className="shadow-2xl h-full flex flex-col overflow-hidden">
+      <Card isDarkMode={isDarkMode} className={cn(
+        "shadow-2xl w-full h-full flex flex-col min-h-0",
+        fullScreen && "rounded-none border-0"
+      )}>
         {/* Header - Fixed */}
         <motion.div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4 flex-shrink-0`}>
           <div className="flex items-center justify-between mb-3 gap-2">
@@ -296,22 +301,26 @@ export default function DiagramViewer({
                 </Button>
               )}
               <div className="min-w-0">
-                <h2 className="text-lg font-bold truncate">Diagram Viewer</h2>
+                <h2 className="text-lg font-bold truncate">
+                  {fullScreen ? '🎨 Full Screen Diagram' : 'Diagram Viewer'}
+                </h2>
                 <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {showCode ? 'Edit PlantUML code' : 'Preview your diagram'}
+                  {showCode ? 'Edit PlantUML code' : fullScreen ? 'Scroll to view large diagrams' : 'Preview your diagram'}
                 </p>
               </div>
             </div>
             <motion.div className="flex gap-2 flex-shrink-0">
-              <Button
-                onClick={() => setIsFullscreen(true)}
-                variant="primary"
-                size="sm"
-                className="flex-shrink-0"
-              >
-                <Maximize2 size={16} />
-                <span className="hidden sm:inline">Expand</span>
-              </Button>
+              {!fullScreen && (
+                <Button
+                  onClick={() => setIsFullscreen(true)}
+                  variant="primary"
+                  size="sm"
+                  className="flex-shrink-0"
+                >
+                  <Maximize2 size={16} />
+                  <span className="hidden sm:inline">Expand</span>
+                </Button>
+              )}
               {diagramUrl && (
                 <>
                   <Button
@@ -368,19 +377,22 @@ export default function DiagramViewer({
           </motion.div>
         </motion.div>
 
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        {/* Content - Force scrolling */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           <AnimatePresence mode="wait">
             {!showCode && (
               <motion.div
                 key="preview"
-                className="flex-1 flex flex-col p-6 overflow-auto min-h-0"
+                className={cn(
+                  "h-full w-full",
+                  fullScreen ? "p-8" : "p-6"
+                )}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
                 {isLoading ? (
-                  <motion.div className="flex-1 flex items-center justify-center">
+                  <motion.div className="h-full flex items-center justify-center">
                     <motion.div className="text-center">
                       <motion.div
                         animate={{ rotate: 360 }}
@@ -399,24 +411,33 @@ export default function DiagramViewer({
                     </motion.div>
                   </motion.div>
                 ) : diagramUrl ? (
-                  <motion.div
-                    className={`flex-1 rounded-xl border-2 ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'} flex items-center justify-center overflow-auto p-4`}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                  <div
+                    className={cn(
+                      "h-full rounded-xl border-2 p-4",
+                      isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-100/50'
+                    )}
+                    style={{ 
+                      overflow: 'auto',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
                   >
                     <motion.img
                       src={diagramUrl}
                       alt="UML Diagram"
-                      className="max-w-full h-auto rounded-lg shadow-lg object-contain"
+                      className="rounded-lg shadow-2xl"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2 }}
-                      whileHover={{ scale: 1.02 }}
-                      style={{ maxHeight: '100%' }}
+                      style={{ 
+                        maxWidth: 'none',
+                        width: 'auto',
+                        height: 'auto',
+                        display: 'block'
+                      }}
                     />
-                  </motion.div>
+                  </div>
                 ) : (
-                  <motion.div className="flex-1 flex items-center justify-center">
+                  <motion.div className="h-full flex items-center justify-center">
                     <motion.div className="text-center">
                       <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl mb-4">
                         🎨
@@ -433,7 +454,7 @@ export default function DiagramViewer({
             {showCode && (
               <motion.div
                 key="code"
-                className="flex-1 flex flex-col gap-3 p-6 overflow-hidden min-h-0"
+                className="h-full flex flex-col gap-3 p-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -449,17 +470,22 @@ export default function DiagramViewer({
                   Copy Code
                 </Button>
 
-                <textarea
-                  value={plantUMLCode}
-                  onChange={(e) => onCodeChange(e.target.value)}
-                  placeholder="PlantUML code appears here..."
-                  className={`flex-1 px-4 py-3 rounded-lg border-2 font-mono text-sm ${
-                    isDarkMode
-                      ? 'border-gray-700 bg-gray-900/50 text-gray-100'
-                      : 'border-gray-200 bg-white/50 text-gray-900'
-                  } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none overflow-auto`}
-                  style={{ minHeight: '200px' }}
-                />
+                <div className="flex-1 overflow-hidden">
+                  <textarea
+                    value={plantUMLCode}
+                    onChange={(e) => onCodeChange(e.target.value)}
+                    placeholder="PlantUML code appears here..."
+                    className={`w-full h-full px-4 py-3 rounded-lg border-2 font-mono text-sm ${
+                      isDarkMode
+                        ? 'border-gray-700 bg-gray-900/50 text-gray-100'
+                        : 'border-gray-200 bg-white/50 text-gray-900'
+                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none scrollbar-thin scrollbar-thumb-rounded`}
+                    style={{ 
+                      overflow: 'auto',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
