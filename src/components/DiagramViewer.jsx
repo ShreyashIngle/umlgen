@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Code2, Copy, Download, Eye, Maximize2, X } from 'lucide-react'
 import { encode } from 'plantuml-encoder'
-import { useMemo, useState } from 'react'
+import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { cn } from '../utils/cn'
 import Button from './Button'
@@ -19,16 +19,9 @@ export default function DiagramViewer({
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Encode PlantUML code to generate diagram URL
-  const diagramUrl = useMemo(() => {
-    if (!plantUMLCode.trim()) return null
-    try {
-      const encoded = encode(plantUMLCode)
-      return `https://www.plantuml.com/plantuml/png/${encoded}`
-    } catch (err) {
-      console.error('Encoding error:', err)
-      return null
-    }
-  }, [plantUMLCode])
+  const diagramUrl = plantUMLCode.trim()
+    ? `https://www.plantuml.com/plantuml/png/${encode(plantUMLCode)}`
+    : null
 
   // Handle code copy
   const handleCopyCode = () => {
@@ -52,7 +45,6 @@ export default function DiagramViewer({
       document.body.removeChild(a)
       toast.success('PNG downloaded successfully!')
     } catch (err) {
-      console.error('Download error:', err)
       toast.error('Failed to download PNG')
     }
   }
@@ -75,24 +67,22 @@ export default function DiagramViewer({
       document.body.removeChild(a)
       toast.success('SVG downloaded successfully!')
     } catch (err) {
-      console.error('Download error:', err)
       toast.error('Failed to download SVG')
     }
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
+  const handleTabChange = (tab) => {
+    gsap.to(containerRef.current, {
+      opacity: 0.5,
+      duration: 0.2,
+      onComplete: () => {
+        setShowCode(tab === 'code')
+        gsap.to(containerRef.current, {
+          opacity: 1,
+          duration: 0.2
+        })
       }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+    })
   }
 
   return (
