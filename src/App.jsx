@@ -20,7 +20,8 @@ const DIAGRAM_TYPES = [
   'Component Diagram',
   'Deployment Diagram',
   'State Diagram',
-  'ER Diagram'
+  'ER Diagram',
+  'Gantt Chart'
 ]
 
 export default function App() {
@@ -88,16 +89,44 @@ export default function App() {
       setCurrentStep(2)
       setShowDiagramSelector(true)
 
-      // Show diagram type selector
+      // Show diagram type selector with EITHER/OR choice
       setTimeout(() => {
         const selectorMsg = {
           id: Date.now() + 1,
-          text: 'Perfect! 📊 Which UML diagram would you like me to generate? Select from the options below or describe a custom diagram.',
+          text: 'Perfect! 📊 Now choose how you want to create your diagram:\n\n**Option 1:** Select from our predefined diagram types\n**Option 2:** Describe a custom diagram in your own words\n\nWhich would you prefer?',
+          isUser: false,
+          isDiagramSelector: true,
+          options: ['📋 Choose from Diagram Types', '✍️ Describe Custom Diagram']
+        }
+        setMessages(prev => [...prev, selectorMsg])
+      }, 300)
+      return
+    }
+
+    // Handle option selection or direct generation
+    if (text === '📋 Choose from Diagram Types') {
+      setShowDiagramSelector(true)
+      setTimeout(() => {
+        const typeMsg = {
+          id: Date.now() + 1,
+          text: 'Great! Select the type of UML diagram you want me to generate:',
           isUser: false,
           isDiagramSelector: true,
           options: DIAGRAM_TYPES
         }
-        setMessages(prev => [...prev, selectorMsg])
+        setMessages(prev => [...prev, typeMsg])
+      }, 300)
+      return
+    }
+
+    if (text === '✍️ Describe Custom Diagram') {
+      setTimeout(() => {
+        const customMsg = {
+          id: Date.now() + 1,
+          text: 'Perfect! Please describe the specific diagram you want me to create. Be as detailed as possible about what should be included, relationships, interactions, etc.',
+          isUser: false
+        }
+        setMessages(prev => [...prev, customMsg])
       }, 300)
       return
     }
@@ -123,7 +152,7 @@ export default function App() {
       setTimeout(() => {
         const successMsg = {
           id: Date.now() + 3,
-          text: '🎉 Diagram generated! You can preview it on the right, edit the code, or download it.',
+          text: '🎉 Diagram generated! You can preview it, edit the code, download it, or ask for modifications.',
           isUser: false
         }
         setMessages(prev => [...prev, successMsg])
@@ -134,7 +163,7 @@ export default function App() {
       toast.error(error.message || 'Failed to generate diagram')
       const errorMsg = {
         id: Date.now() + 4,
-        text: `❌ Error: ${error.message}. Please try again.`,
+        text: `❌ Error: ${error.message}. Please try again or describe your diagram differently.`,
         isUser: false
       }
       setMessages(prev => [...prev, errorMsg])
